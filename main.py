@@ -13,19 +13,16 @@ from tkinter.scrolledtext import ScrolledText
 # # # #
 # Local folders Modules
 # # # #
-from models import insertUser, insertCookie, searchUser, verifyCookie, logout_func,deleteFile
 from line_numbers import TextLineNumbers
 from side_panel import SidePanel
-from files_list import file_list
 from label_frame import LicencesFrame, Copyright
 from styles import Stylings
-from monitor_cookie import cookie_monitor
 from progress import Progress_Frame
-from extras.encryt import lock_file, decrypt
-from generate_secrets import hash_sign, hashed_id, verify
-from extras.init_run import run_connection
 from clock_frame import ClockFrame
-from libraries import missing_libs
+#from libraries import missing_libs
+import requirements
+
+# Your original imports follow safely below:
 
 ERROR = 'Error.TLabel'
 SUCCESS = 'Success.TLabel'
@@ -45,12 +42,17 @@ def welcome_frame(root):
   return welcome_fr
   
 def sign_in_tab(notebook, root):
+  # lazy import to avoid circular imports and unnecessary DB connections at startup
+  from models import searchUser, insertCookie
+
+  from generate_secrets import hashed_id, verify
+
   # function to get user data for confirmation
   def getIn(event=None):
     uname = email_tf.get().encode('utf-8')
     pwd = pwd_tf.get().encode('utf-8')
 
-    expire_d = timedelta(minutes=45)
+    expire_d = timedelta(minutes=2)
     expt = datetime.now() + expire_d
 
     if uname != ''.encode('utf-8') and pwd != ''.encode('utf-8'):
@@ -103,6 +105,10 @@ def sign_in_tab(notebook, root):
   notebook.add(signin_frame, text="User, sign in")
 
 def sign_up_tab(notebook, root):
+  # lazy import to avoid circular imports and unnecessary DB connections at startup
+  from models import insertUser, logout_func
+  from generate_secrets import hash_sign, hashed_id
+
   # Sign Up Function to connect to DB
   pwd_label = tk.StringVar()
   confirm_pwd_label = tk.StringVar()
@@ -208,6 +214,11 @@ def sign_up_tab(notebook, root):
 
 ### Opening Frame
 def base_frame_tab(root, session_cookie):
+  # lazy import to avoid circular imports and unnecessary DB connections at startup
+  from models import deleteFile, logout_func
+  from extras.encryt import lock_file, decrypt
+  from files_list import file_list
+  
   root.geometry('976x512')
   def update_title():
     tit_time = datetime.fromisoformat(session_cookie.cookie_expire_time)
@@ -319,77 +330,163 @@ def base_frame_tab(root, session_cookie):
   return base_frame
 
 def Run_Cookie(root, cookie):
-  if cookie is not None:
+    # Lazy imports to keep startup snappy
+    from models import logout_func
+    from monitor_cookie import cookie_monitor
+
+    if cookie is None:
+        print("Not logged in.")
+        return
+
+    # Initialize a tracking flag on root to prevent multiple monitor popups spawning at once
+    if not hasattr(root, "monitor_active"):
+        root.monitor_active = False
+
     expire_time = datetime.fromisoformat(cookie.cookie_expire_time)
-    if expire_time < datetime.now():
-      logout_func(cookie[0])
-      root.destroy()
-      create_main_app()
-    elif (expire_time - datetime.now()) <= timedelta(minutes=3):
-      cookie_window = cookie_monitor(root)
-      root.wait_window(cookie_window.cookie_box)
-      cookie_value = cookie_window.valueVar
+    time_remaining = expire_time - datetime.now()
 
-      if cookie_value.get() == 'renewed':
+    # --- SCENARIO 1: Cookie has completely expired ---
+    if time_remaining <= timedelta(seconds=0):
+        print("Session expired! Logging out automatically...")
+        
+        # 1. Cleanly cancel our main app background loop so it stops firing
+        if hasattr(root, "check_run_id") and root.check_run_id is not None:
+            root.after_cancel(root.check_run_id)
+            root.check_run_id = None
+            
+        # 2. Update the backend database session state
+        logout_func(cookie[0])
+        
+        # 3. Destroy the current window framework completely
         root.destroy()
+        
+        # 4. Trigger the fresh main app sequence (safely outside the loop context)
         create_main_app()
-      else:
-        root.destroy()
-        create_main_app()
+        return
+
+    # --- SCENARIO 2: Cookie expires soon (<= 3 minutes remaining) ---
+    elif time_remaining <= timedelta(minutes=1):
+        # 🛡️ Only open the warning dialog if one isn't already visible on screen!
+        if not root.monitor_active:
+            root.monitor_active = True
+            
+            print(f"Session expiring soon! {time_remaining.total_seconds():.0f}s left.")
+            cookie_window = cookie_monitor(root)
+            
+            # This halts this loop's execution until the user interacts with the popup
+            root.wait_window(cookie_window.cookie_box)
+            
+            cookie_value = cookie_window.valueVar
+            root.monitor_active = False # Window closed, clear the layout flag
+
+            # Cancel background loops right before shifting app states
+            if hasattr(root, "check_run_id") and root.check_run_id is not None:
+                root.after_cancel(root.check_run_id)
+                root.check_run_id = None
+
+            if cookie_value.get() == 'renewed':
+                print("Session successfully renewed by user.")
+                root.destroy()
+                create_main_app()
+            else:
+                print("User declined renewal or closed warning. Logging out.")
+                logout_func(cookie[0])
+                root.destroy()
+                create_main_app()
+                
+    # --- SCENARIO 3: Session is perfectly safe (> 3 minutes remaining) ---
     else:
-      pass
-  else:
-    print("Not logged in.")
+        # Everything is fine. Safely pass and let the 1-second interval loop continue
+        pass
 
-def run_progress_frm(root):
-  pf = Progress_Frame(root)
-  if pf.p_result.get() == True:
-    root.destroy()
-    create_main_app()
+def run_dependency_check():
+    """
+    Launches the progress bar window. Returns True if we are safe to proceed
+    to the main app, or False if the user closed/cancelled it.
+    """
+    installer_root = tk.Tk()
+    
+    # Initialize your refactored Progress_Frame
+    app = Progress_Frame(installer_root)
+    
+    # If all modules are already installed, skip loading the GUI entirely
+    if not app.missing_modules:
+        installer_root.destroy()
+        return True
 
+    # Start the Tkinter loop just for the installer window
+    installer_root.mainloop()
+    
+    # Once installer_root is destroyed, return whether the download succeeded/skipped
+    return app.p_result.get()
+
+# create_main_app is the main function that launches the actual application after dependencies are verified and the user logs in. It is called at the end of the __main__ block.
 def create_main_app():
-  session_cookie = verifyCookie()
-  root = tk.Tk()
-  root.title('Cryptor App')
-  root.resizable(0, 0)
+    from models import verifyCookie, logout_func
+    session_cookie = verifyCookie()
+    
+    root = tk.Tk()
+    root.title('Cryptor App')
+    root.resizable(0, 0)
+    
+    # Initialize a variable on root to hold our after loop ID
+    root.check_run_id = None 
 
-  # Styles
-  Stylings(root)
+    Stylings(root)
 
-  # The icon 
-  try: 
-    root.wm_iconbitmap("cryp.ico") 
-  except: 
-    pass
+    try: 
+        root.wm_iconbitmap("cryp.ico") 
+    except: 
+        pass
 
-  def lgt():
+    def lgt():
+        # 🛑 CANCEL THE LOOP HERE BEFORE DESTROYING THE WINDOW
+        if root.check_run_id is not None:
+            root.after_cancel(root.check_run_id)
+            
+        if session_cookie is not None:
+            if askyesno('Exiting...', 'The programme is shutting down now. All unsaved data may be lost permanently. You will be logged out automatically. \n\nDo you wish to proceed?'):
+                logout_func(session_cookie[0])
+                root.destroy()
+        else:
+            root.destroy()
+
+    def check_run():
+        Run_Cookie(root, session_cookie)
+        # Capture the ID of the next scheduled loop
+        root.check_run_id = root.after(1000, check_run)
+
+    root.columnconfigure(0, weight=1)
+    root.protocol("WM_DELETE_WINDOW", lgt)
+
     if session_cookie is not None:
-      if askyesno('Exiting...', 'The programme is shutting down now. All unsaved data may be lost permanently. You will be logged out automatically. \n\nDo you wish to proceed?'):
-        logout_func(session_cookie[0])
-        root.destroy()
+        # Start the loop and save its initial ID
+        root.check_run_id = root.after(1000, check_run)
+        base = base_frame_tab(root, session_cookie)
+        base.pack(fill='both', expand=1)
     else:
-      root.destroy()
+        welcome = welcome_frame(root)
+        welcome.pack(fill='both', expand=1)
 
-  def check_run():
-    Run_Cookie(root, session_cookie)
-    root.after(1000, check_run)
-
-  root.columnconfigure(0, weight=1)
-  root.protocol("WM_DELETE_WINDOW", lgt)
-
-  if missing_libs is True:
-    run_progress_frm(root)
-  elif session_cookie is not None:
-    root.after(1000, check_run)
-    base = base_frame_tab(root, session_cookie)
-    base.pack(fill='both', expand=1)
-  else:
-    welcome = welcome_frame(root)
-    welcome.pack(fill='both', expand=1)
-
-  root.mainloop()
+    root.mainloop()
 
 #### RUN THE __MAIN__ FUNCTION ####
 if __name__ == "__main__":
-  run_connection()
-  create_main_app()
+    # 1. Run the visual dependency installer wrapper FIRST.
+    # This uses only Tkinter and standard libraries, so it won't crash!
+    proceed_to_app = run_dependency_check()
+    
+    # 2. Only open the main app if the dependency window closed successfully
+    if proceed_to_app:
+        # Move the sensitive imports INSIDE this block.
+        # They will only execute AFTER pycryptodome is guaranteed to be installed!
+        print("Dependencies verified. Loading database and encryption modules...")
+        from extras.init_run import run_connection
+        
+        # Now it is safe to establish database connections
+        run_connection()
+        
+        # Launch the main application
+        create_main_app()
+    else:
+        print("Application startup aborted by user.")
