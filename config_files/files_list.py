@@ -1,103 +1,109 @@
-import tkinter as tk;
-from tkinter.ttk import *;
-from extras.models import retrieveFiles, verifyCookie;
-from datetime import datetime;
+import tkinter as tk
+from tkinter.ttk import *
+from extras.models import retrieveFiles, verifyCookie
+from datetime import datetime
 
-lifont = ('Times', 17, 'italic');
+lifont = ('Times', 12, 'italic')
+
 class file_list(Frame):
+    def __init__(self, master=None):
+        # Initialize directly inside the master container provided (the top-left red zone)
+        super().__init__(master)
+        
+        # 🛡️ Crucial Layout: Pack yourself inside the parent container to fill space completely
+        self.pack(fill='both', expand=True)
 
-  def __init__(self, master=None):
-    super().__init__(master)
-    self.pack()
-    session_cookie = verifyCookie()
-    self.all_files = retrieveFiles(session_cookie[2])
-    self.doc_id = tk.StringVar()
-    self.deleted_id = tk.StringVar()
+        session_cookie = verifyCookie()
+        self.all_files = retrieveFiles(session_cookie[2])
+        
+        # Public StringVars that base_frame_tab can read/trace at any time
+        self.doc_id = tk.StringVar()
+        self.deleted_id = tk.StringVar()
 
-    self.note = tk.Toplevel(master, relief='flat', takefocus=True)
-    self.note.geometry("860x400")
-    self.note.attributes('-topmost', True)
+        # 🔴 Set up a simple descriptor label inside the sidebar workspace
+        Label(self, text=f"Total Saved Files: {len(self.all_files)}", font=lifont, anchor='center', padding=4).pack(side='top', fill='x')
 
-    try:
-      self.note.wm_iconbitmap("cryp.ico") 
-    except: 
-      pass
-    
-    self.note.title('Session for {}'.format(session_cookie[2].decode('utf-8').capitalize()))
+        # Main frame wrapper for Treeview list layout structures
+        self.list_frame = Frame(self)
+        self.list_frame.pack(fill='both', expand=True, padx=2, pady=2)
 
-    Label(self.note, text=f"Documents for {session_cookie[2].decode('utf-8').capitalize()} : total = {len(self.all_files)}", font=lifont, relief='ridge', padding=4).pack(side='top', fill='x')
+        # Build the dynamic list component tree
+        self.lst_files = Treeview(self.list_frame, selectmode='browse')
 
-    self.list_frame = Frame(self.note)
-    self.list_frame["borderwidth"] = 4
-    self.list_frame["relief"] = "groove"
-    self.list_frame["padding"] = 4
-    self.list_frame.pack(fill='both', expand=1)
+        # Attach standard right-aligned scroll interface tracks
+        self.lst_scrbar = Scrollbar(self.list_frame, command=self.lst_files.yview)
+        self.lst_scrbar.pack(side='right', fill='y')
+        self.lst_files['yscrollcommand'] = self.lst_scrbar.set
 
-    # use treeview for making a list
-    self.lst_files = Treeview(self.list_frame, selectmode='browse')
+        # Strip down visible columns slightly to ensure it looks clean packed in a narrow sidebar width
+        self.lst_files['columns'] = ('file_id', 'updated')
 
-    # attach scrollbar
-    self.lst_scrbar = Scrollbar(self.list_frame, command=self.lst_files.yview)
-    self.lst_scrbar.pack(side='right', fill='y')
+        # Formatting data widths for a compact sidebar layout configuration
+        self.lst_files.column('#0', width=0, stretch='no')
+        self.lst_files.column('file_id', width=160, anchor='w')
+        self.lst_files.column('updated', width=100, anchor='center')
 
-    self.lst_files['yscrollcommand'] = self.lst_scrbar.set
+        # Format layout tracking column headers
+        self.lst_files.heading('#0', text='', anchor='center')
+        self.lst_files.heading('file_id', text='Document Name / ID', anchor='w')
+        self.lst_files.heading('updated', text='Last Modified', anchor='center')
 
-    # list columns
-    self.lst_files['columns'] = ('file_id', 'owner_name', 'created', 'updated')
+        # Populate the treeview table collection metrics
+        count = 0
+        for item in self.all_files:
+            file_id_str = item[0].decode('utf-8') if isinstance(item[0], bytes) else str(item[0])
+            
+            # Grabbing the last updated ISO string cleanly
+            try:
+                mod_time = datetime.fromisoformat(item[7]).strftime('%d-%m-%Y %H:%M')
+            except (ValueError, TypeError):
+                mod_time = "Unknown"
 
-    # formatting columns
-    self.lst_files.column('#0', width=0, stretch='no')
-    self.lst_files.column('file_id', width=188, anchor='center')
-    self.lst_files.column('owner_name', width=10, anchor='center')
-    self.lst_files.column('created', width=20, anchor='center')
-    self.lst_files.column('updated', width=20, anchor='center')
+            self.lst_files.insert(
+                parent='', 
+                index='end', 
+                iid=count, 
+                text='', 
+                values=(file_id_str, mod_time)
+            )
+            count += 1
 
-    # format headings
-    self.lst_files.heading('#0', text='', anchor='center')
-    self.lst_files.heading('file_id', text='File ID', anchor='center')
-    self.lst_files.heading('owner_name', text='File Owner', anchor='center')
-    self.lst_files.heading('created', text='Created', anchor='center')
-    self.lst_files.heading('created', text='Updated', anchor='center')
+        # Bind native selection logic triggers
+        self.lst_files.bind('<<TreeviewSelect>>', self.select_record)
+        
+        # Render out elements inside the list frame allocation zone
+        self.lst_files.pack(fill='both', expand=True)
 
-    # populate the treeview table
-    global count
-    count = 0
-    for item in self.all_files:
-      self.lst_files.insert(parent='', index='end', iid=count, text='', values=(item[0].decode('utf-8'), item[1].decode('utf-8'), datetime.fromisoformat(item[6]).strftime('%d-%m-%Y %X'), datetime.fromisoformat(item[7]).strftime('%d-%m-%Y %X') ))
-      count += 1
+    def select_record(self, event):
+        """ Fires automatically whenever an item inside the file explorer sidebar is highlighted """
+        widget = event.widget
+        selected_item = widget.focus()
 
-    # BUTTON FRAME
-    self.btns_frame = Frame(self.note, padding=(32,2))
-    self.read_btn = Button(self.btns_frame, cursor='hand2', text="Read", style='Decrypt.TButton')
-    self.read_btn.state(['disabled'])
-    self.read_btn.grid(row=0, column=0, pady=2, padx=2)
-    self.del_btn = Button(self.btns_frame, cursor='hand2', text="Delete", style='Delete.TButton')
-    self.del_btn.state(['disabled'])
-    self.del_btn.grid(row=0, column=1, pady=2, padx=2)
-    self.btns_frame.pack(side=tk.BOTTOM, fill=tk.X)
-    Button(self.btns_frame, cursor='hand2', style="Lougout.TButton", text="Close", command=lambda : self.note.destroy()).grid(row=0, column=2, padx=(128,4))
+        if selected_item:
+            values = self.lst_files.item(selected_item, 'values')
+            if values:
+                # Silently updates the active document ID state variable.
+                # Your main app loop or buttons can observe this value tracking update!
+                self.doc_id.set(values[0])
 
-    def select_record(event):
-      widget = event.widget
-      value = widget.focus()
 
-      values = self.lst_files.item(value, 'values')
-
-      self.del_btn['state'] = 'normal'
-      self.read_btn['state'] = 'normal'
-
-      self.read_btn['command'] = lambda : self.get_doc_id(get_id=values[0])
-      self.del_btn['command'] = lambda : self.delete_doc(delete_id=values[0])
-
-    # bind the treeview selection mode
-    self.lst_files.bind('<<TreeviewSelect>>', select_record)
-
-    self.lst_files.pack(fill='both', expand=True)
-
-  def get_doc_id(self, get_id):
-    self.doc_id.set(get_id)
-    self.note.destroy()
-  
-  def delete_doc(self, delete_id):
-    self.deleted_id.set(delete_id)
-    self.note.destroy()
+    def refresh_list(self):
+        """ Helper utility method to redraw the files tree after a record deletion or creation occurs """
+        session_cookie = verifyCookie()
+        self.all_files = retrieveFiles(session_cookie[2])
+        
+        # Drop all old data items out of view scope lists
+        for item in self.lst_files.get_children():
+            self.lst_files.delete(item)
+            
+        # Re-populate data entries smoothly
+        count = 0
+        for item in self.all_files:
+            file_id_str = item[0].decode('utf-8') if isinstance(item[0], bytes) else str(item[0])
+            try:
+                mod_time = datetime.fromisoformat(item[7]).strftime('%d-%m-%Y %H:%M')
+            except (ValueError, TypeError):
+                mod_time = "Unknown"
+                
+            self.lst_files.insert(parent='', index='end', iid=count, text='', values=(file_id_str, mod_time))
+            count += 1

@@ -3,56 +3,109 @@ from tkinter.ttk import *
 import time
 
 class LicencesFrame(LabelFrame):
-  def __init__(self, master):
-    super().__init__(master)
-    self['text'] = 'Licences'
+    def __init__(self, master):
+        # Explicitly configure LabelFrame style properties to match dark themes
+        super().__init__(master, text='Licences')
 
-    Button(
-      self, text='Licence', style="Licence.TButton", command=lambda: self.wait_window(LicenceDetails().top), cursor='hand2'
-    ).grid(row=0, column=0, padx=5, pady=5)
-    Button(
-      self, text='Copyright', style="Licence.TButton", command=lambda: self.wait_window(Copyright().top), cursor='hand2'
-    ).grid(row=1, column=0, padx=5, pady=5)
+        # Create two side-by-side buttons instead of vertical stacking to save vertical space in the sidebar
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
 
-    self.grid(row=6, column=0, padx=5, pady=5)
+        # We pass self.master (the top-level window/root) down to the popups so they position correctly
+        Button(
+            self, 
+            text='Licence', 
+            style="Signup.TButton", 
+            command=lambda: self.wait_window(LicenceDetails(self.winfo_toplevel()).top), 
+            cursor='hand2'
+        ).grid(row=0, column=0, padx=5, pady=8, sticky='ew')
+        
+        Button(
+            self, 
+            text='Copyright', 
+            style="Signup.TButton", 
+            command=lambda: self.wait_window(Copyright(self.winfo_toplevel()).top), 
+            cursor='hand2'
+        ).grid(row=0, column=1, padx=5, pady=8, sticky='ew')
+
+        # 🛡️ REMOVED: self.grid(...) from inside here. 
+        # Placement is now handled explicitly by the parent dashboard layout file.
+
 
 class LicenceDetails(Frame):
-  def __init__(self, master=None):
-    super().__init__(master)
-    self.pack()
+    def __init__(self, master=None):
+        super().__init__(master)
+        
+        self.top = tk.Toplevel(master, relief='flat')
+        self.top.geometry("340x260")
+        self.top.resizable(0,0)
+        self.top.title('Licence Agreement')
+        self.top.attributes('-topmost', True)
+        self.top.configure(bg="#1e1e1e")
 
-    self.top = tk.Toplevel(master, relief='ridge')
-    self.top.geometry("256x256")
-    self.top.resizable(0,0)
-    self.top.title('The licence')
-    self.top.attributes('-topmost', True)
+        # Dark mode flat text block configuration
+        self.text_fr = tk.Text(
+            self.top, 
+            height=10, 
+            relief='flat', 
+            bg='#2d2d2d', 
+            fg='#ffffff', 
+            font=('Arial', 10),
+            padx=10,
+            pady=10,
+            wrap='word'
+        )
+        self.text_fr.pack(fill='both', expand=True, side='top', padx=10, pady=10)
+        
+        licence_text = (
+            "This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.\n\n"
+            "This is free software, and you are welcome to redistribute it under certain conditions; "
+            "type `show c' for details."
+        )
+        self.text_fr.insert(1.0, licence_text)
+        self.text_fr['state'] = 'disabled'
 
-    self.text_fr = tk.Text(self.top, height=12, relief='flat', bg='gray')
-    self.text_fr.pack(fill='x', expand=1, side='top')
-    self.text_fr.insert(1.0, "This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'. \n\nThis is free software, and you are welcome to redistribute it under certain conditions; \ntype `show c' for details.")
-    self.text_fr['state'] = 'disabled'
+        # Styled copyright indicator string label
+        lbl = Label(self.top, text=f"© 2021 - {time.strftime('%Y')} by Mapenzi Mudimba", font=('Arial', 9))
+        lbl.pack(side='bottom', pady=(0, 10))
 
-    Label(self.top, text=f"©(2021 - {time.strftime('%Y')}) by Mapenzi Mudimba").pack(side='bottom')
 
 class Copyright(Frame):
-  def __init__(self, master=None):
-    super().__init__(master)
-    self.pack()
+    def __init__(self, master=None):
+        super().__init__(master)
+        
+        self.top = tk.Toplevel(master, relief='flat')
+        self.top.geometry("360x280")
+        self.top.resizable(0,0)
+        self.top.title('Copyright Metadata')
+        self.top.attributes('-topmost', True)
+        self.top.configure(bg="#1e1e1e")
 
-    self.top = tk.Toplevel(master, relief='ridge')
-    self.top.geometry("320x256")
-    self.top.resizable(0,0)
-    self.top.title('Copyrights')
-    self.top.attributes('-topmost', True)
+        # Container wrap panel
+        self.frame_one = Frame(self.top, relief='flat')
+        self.frame_one.pack(fill='both', expand=True, padx=10, pady=10)
 
-    self.frame_one = Frame(self.top, relief='flat')
-    self.frame_one.grid(row=0, column=0, padx=4, pady=2)
-
-    self.text_f = tk.Text(self.frame_one, width=38, height=12)
-    self.text_f.pack(fill='both', expand=1)
-    self.text_f.insert(1.0, "This page is licensed under the Python Software Foundation License Version 2. \n\nExamples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License. \n\nAll rights reserved.")
-    self.text_f['state'] = 'disabled'
-    
-    self.frame_two = Frame(self.top, relief='flat')
-    self.frame_two.grid(row=1, column=0, pady=16)
-    Label(self.frame_two, text=f"©(2021 - {time.strftime('%Y')}) by Mapenzi Mudimba").pack()
+        self.text_f = tk.Text(
+            self.frame_one, 
+            height=10, 
+            relief='flat', 
+            bg='#2d2d2d', 
+            fg='#ffffff', 
+            font=('Arial', 10),
+            padx=10,
+            pady=10,
+            wrap='word'
+        )
+        self.text_f.pack(fill='both', expand=True)
+        
+        copyright_text = (
+            "This page is licensed under the Python Software Foundation License Version 2.\n\n"
+            "Examples, recipes, and other code in the documentation are additionally licensed "
+            "under the Zero Clause BSD License.\n\n"
+            "All rights reserved."
+        )
+        self.text_f.insert(1.0, copyright_text)
+        self.text_f['state'] = 'disabled'
+        
+        lbl = Label(self.top, text=f"© 2021 - {time.strftime('%Y')} by Mapenzi Mudimba", font=('Arial', 9))
+        lbl.pack(side='bottom', pady=(0, 10))
