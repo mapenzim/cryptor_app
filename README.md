@@ -1,9 +1,6 @@
-```markdown
 # Cryptor App 🔐
 
 An isolated, multi-user secure text editor featuring robust application file encryption utilizing AES/RSA algorithms, dynamic token-based session tracking, and seamless SQLite database backend synchronization.
-
----
 
 ## 🚀 Getting Started
 
@@ -86,8 +83,6 @@ To protect local environments and security parameters from leaking onto remote v
 * Do **NOT** push structural session binaries, database caches, or security instances (`db/`, `*.db`).
 
 ```
-
----
 
 ### Pro Tip for Updating Your Repo
 Before committing this documentation template, make sure your dependency references match your current working tree environment by generating a requirements index file inside your Git Bash console:
