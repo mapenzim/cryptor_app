@@ -130,4 +130,22 @@ dmypy.json
 
 *.bin
 *.pem
-noteookserver.db
+
+# --- Application Data & Databases ---
+db/
+*.db
+*.sqlite3
+
+# --- IDEs and Text Editors ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+
+# --- Cryptographic / Secrets Fallbacks ---
+# (In case you ever generate hard backup key files locally)
+*.pem
+*.pub
+*.key
+*.secret
