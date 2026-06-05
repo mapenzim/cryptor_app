@@ -3,8 +3,6 @@ from collections import namedtuple
 import timeit
 import os
 
-# 🛡️ REMOVED top-level Crypto imports to protect the boot sequence!
-
 db_string = "./db/notebookserver.db"
 
 def time_stuff(some_function):

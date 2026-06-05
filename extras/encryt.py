@@ -18,8 +18,7 @@ def lock_file(session_cookie, upd_id, text_message, mode):
         new_key_pair = check_key(pk)
 
         if new_key_pair is None:
-            item = generate_keys()
-            showinfo(item)
+            generate_keys()
             new_key_pair = check_key(pk)
         else:
             new_key_pair = check_key(pk)
