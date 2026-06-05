@@ -82,7 +82,6 @@ To protect local environments and security parameters from leaking onto remote v
 * Do **NOT** push active virtual environments (`venv/`).
 * Do **NOT** push structural session binaries, database caches, or security instances (`db/`, `*.db`).
 
-```
 
 ### Pro Tip for Updating Your Repo
 Before committing this documentation template, make sure your dependency references match your current working tree environment by generating a requirements index file inside your Git Bash console:
