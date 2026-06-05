@@ -27,7 +27,7 @@ def Stylings(root):
     "TButton",
     relief='raised',
     background="#b2c",
-    foreground='#010'
+    foreground='#010',
   )
 
   style.configure("Success.TLabel", font = "Verdana 8",
@@ -37,9 +37,10 @@ def Stylings(root):
   style.configure("Warning.TLabel", font = "Verdana 8",
     foreground='#f1d982', background="#c08be7")
   style.configure(
-      'Clock.TLabel',
-      background='black',
-      foreground='red')
+    'Clock.TLabel',
+    background='black',
+    foreground='red'
+  )
   
   # Color Schemes
   style.configure("Notebook.TNotebook", relief="flat")

@@ -1,9 +1,9 @@
-import tkinter as tk
-from tkinter.ttk import *
-from models import retrieveFiles, verifyCookie
-from datetime import datetime
+import tkinter as tk;
+from tkinter.ttk import *;
+from extras.models import retrieveFiles, verifyCookie;
+from datetime import datetime;
 
-lifont = ('Times', 17, 'italic')
+lifont = ('Times', 17, 'italic');
 class file_list(Frame):
 
   def __init__(self, master=None):

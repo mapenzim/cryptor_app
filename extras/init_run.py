@@ -1,7 +1,7 @@
 import sqlite3
 
 def run_connection():
-  init_connection = sqlite3.connect('notebookserver.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+  init_connection = sqlite3.connect('./db/notebookserver.db', detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
   cur = init_connection.cursor()
   cur.executescript('''
     BEGIN;
