@@ -10,8 +10,8 @@ def sign_in_tab(notebook, root, create_main_app):
   def getIn(event=None):
     # 🚚 LAZY IMPORTS: Safely contained inside the operational block.
     # These only execute AFTER the progress bar ensures they are fully installed.
-    from extras.generate_secrets import hashed_id, verify
-    from extras.models import insertCookie, searchUser
+    from cryptor_app.extras.generate_secrets import hashed_id, verify
+    from cryptor_app.extras.models import insertCookie, searchUser
 
     uname = email_tf.get().encode('utf-8')
     pwd = pwd_tf.get().encode('utf-8')

@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 
 def Run_Cookie(root, cookie, create_main_app):
   # Lazy imports to keep startup snappy
-  from extras.models import logout_func
-  from config_files.monitor_cookie import cookie_monitor
+  from cryptor_app.extras.models import logout_func
+  from cryptor_app.config_files.monitor_cookie import cookie_monitor
 
   if cookie is None:
     print("Not logged in.")

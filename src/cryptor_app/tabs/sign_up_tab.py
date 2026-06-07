@@ -4,7 +4,7 @@ from tkinter.messagebox import askokcancel, showerror, showinfo
 from tkinter.ttk import Frame, Button, Label, Entry, Checkbutton
 from datetime import datetime
 
-from config_files.label_frame import Copyright
+from cryptor_app.config_files.label_frame import Copyright
 
 ERROR = 'Error.TLabel'
 SUCCESS = 'Success.TLabel'
@@ -39,8 +39,8 @@ def sign_up_tab(notebook, root):
   def save():
     # 🚚 LAZY IMPORTS: Safely tucked away inside the click event.
     # These will only evaluate AFTER the progress bar window ensures they exist!
-    from extras.generate_secrets import hash_sign, hashed_id
-    from extras.models import insertUser
+    from cryptor_app.extras.generate_secrets import hash_sign, hashed_id
+    from cryptor_app.extras.models import insertUser
 
     uname = email_tf.get().encode('utf-8')
     secret = pwd_tf.get().encode('utf-8')

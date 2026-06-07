@@ -10,10 +10,10 @@ from tkinter.scrolledtext import ScrolledText
 # # # #
 # Local folders Modules
 # # # #
-from config_files.label_frame import LicencesFrame
-from config_files.line_numbers import TextLineNumbers
-from config_files.files_list import file_list
-from config_files.ai_texter import AITexterPanel
+from cryptor_app.config_files.label_frame import LicencesFrame
+from cryptor_app.config_files.line_numbers import TextLineNumbers
+from cryptor_app.config_files.files_list import file_list
+from cryptor_app.config_files.ai_texter import AITexterPanel
 
 ### Opening Frame
 def base_frame_tab(root, session_cookie, create_main_app):
@@ -114,7 +114,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
 
   # Right: logout btn
   def logout(cookie):
-    from extras.models import logout_func
+    from cryptor_app.extras.models import logout_func
     if hasattr(root, "check_run_id") and root.check_run_id is not None:
       root.after_cancel(root.check_run_id)
       root.check_run_id = None
@@ -146,7 +146,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
   # ⚙️ SYSTEM FILE CALLBACK HANDLING
   # ----------------------------------------------------
   def auto_load_file(event=None):
-    from extras.encryt import decrypt
+    from cryptor_app.extras.encryt import decrypt
     widget = sidebar_explorer.lst_files
     selected_item = widget.focus()
     if not selected_item: return
@@ -184,7 +184,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
       return
     my_del = askokcancel('Delete file', f'Deleting: {title_entry.get("1.0", "end-1c").strip() if title_entry.get("1.0", "end-1c").strip() else current_selection}.\nThis action is permanent. Proceed?')
     if my_del:
-      from extras.models import deleteFile
+      from cryptor_app.extras.models import deleteFile
       deleteFile(current_selection.encode('utf-8'))
       if upd_id.get() == current_selection: new_doc()
       else: sidebar_explorer.doc_id.set('')
@@ -192,7 +192,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
       showinfo('Success', 'File removed successfully.')
 
   def file_locker():
-    from extras.encryt import lock_file
+    from cryptor_app.extras.encryt import lock_file
     t_str, f_str = title_entry.get("1.0", "end-1c").strip(), for_var.get().strip()
     if not t_str or not f_str:
       showerror('Input Missing', 'Please provide both a Document Title and a Purpose before locking.')
@@ -208,7 +208,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
       showinfo('Success', 'New document safely encrypted and stored!')
 
   def file_update():
-    from extras.encryt import lock_file
+    from cryptor_app.extras.encryt import lock_file
     t_str, f_str = title_entry.get("1.0", "end-1c").strip(), for_var.get().strip()
     if not t_str or not f_str:
       showerror('Input Missing', 'Document Title and Purpose headers cannot be empty.')

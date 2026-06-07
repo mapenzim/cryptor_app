@@ -2,9 +2,9 @@ from tkinter.messagebox import showerror, showinfo
 import secrets
 from datetime import datetime
 
-from extras import generate_secrets
+from cryptor_app.extras import generate_secrets
 # 🛡️ Using absolute path layout to prevent relative tracking parent packaging errors
-from extras.models import check_key, generate_keys, insertFile, updateFile, retrieveSingleFile
+from cryptor_app.extras.models import check_key, generate_keys, insertFile, updateFile, retrieveSingleFile
 
 def lock_file(session_cookie, upd_id, text_message, mode, file_title="Untitled", file_for="General"):
     # 🚚 LAZY IMPORTS: Tucked cleanly inside the operational function boundary context

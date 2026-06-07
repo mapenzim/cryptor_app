@@ -7,7 +7,7 @@ class cookie_monitor(Frame):
     super().__init__(master)
     self.pack()
 
-    from extras.models import verifyCookie
+    from cryptor_app.extras.models import verifyCookie
 
     self.root_window = master 
     self.session_cookie = verifyCookie()
@@ -103,7 +103,7 @@ class cookie_monitor(Frame):
     self.cookie_box.focus()
 
   def re_cookie(self):
-    from extras.models import renew_cookie
+    from cryptor_app.extras.models import renew_cookie
     
     if hasattr(self.root_window, "check_run_id") and self.root_window.check_run_id is not None:
       self.root_window.after_cancel(self.root_window.check_run_id)
@@ -122,7 +122,7 @@ class cookie_monitor(Frame):
     create_main_app()
 
   def logout_user(self):
-    from extras.models import logout_func
+    from cryptor_app.extras.models import logout_func
     
     if hasattr(self.root_window, "check_run_id") and self.root_window.check_run_id is not None:
       self.root_window.after_cancel(self.root_window.check_run_id)

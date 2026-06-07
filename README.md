@@ -1,95 +1,132 @@
-# Cryptor App 🔐
+---
 
-An isolated, multi-user secure text editor featuring robust application file encryption utilizing AES/RSA algorithms, dynamic token-based session tracking, and seamless SQLite database backend synchronization.
+```markdown
+# Cryptor App 🛡️
 
-## 🚀 Getting Started
+[![PyPI version](https://img.shields.io/pypi/v/cryptor-app.svg)](https://pypi.org/project/cryptor-app/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Follow these instructions to set up a local copy of the project and get it running on your machine.
+A zero-trust, local-first cryptographic notebook workspace designed to encrypt, store, and manage highly sensitive credentials, access keys, and multi-factor backup tokens. 
 
-### 📋 Prerequisites
+Built on a native Python Tkinter desktop stack, this architecture integrates real-time session tracking defenses, dynamic system UI scaling, and an optimized, completely offline asynchronous local AI Copilot engine.
 
-Ensure you have **Python 3.11** or higher installed on your system. You can check your version by running:
+---
 
-```bash
-python --version
+## 🚀 Key Features
+
+* **Production PyPI Distribution:** Fully packaged and distributed as a native system command-line utility. 
+* **Local Asynchronous AI Copilot:** Seamless interface integration with local Ollama (`llama3:8b`) models via non-blocking asynchronous socket pipes. Generates mathematically complex passwords or cryptographic templates without freezing the view layer canvas thread.
+* **Dynamic Canvas Loading Overlay:** Automatically masks the active workspace with an accelerated native vector circular spinner tracking loop while background inference threads compile data streams.
+* **Auto-Maturity Session Defenses:** A background daemon tracking countdown lifecycles. At `t-minus 3 minutes`, a centered dark warning modal prompts users to extend or safely terminate credentials. If abandoned, an automated absolute destruction routine wipes memory addresses at 0 seconds.
+* **Chronological Explorer Sidebar:** Metadata-driven treeview displays records ordered dynamically, bubbling the latest modified payloads directly to the top. Secretly routes cryptographic mapping IDs behind the scenes, keeping the interface completely clear of ugly raw hexadecimal strings.
+
+---
+
+## 🛠️ Architecture & Core Data Flow
+
+The codebase separates interface layouts, async threading abstractions, and local file encryption engines into standalone decoupled modules:
+
+```text
+cryptor_app/
+├── pyproject.toml              # Modern build configuration (SPDX license & script bindings)
+├── README.md                   # System documentation
+└── src/
+    └── cryptor_app/
+        ├── __init__.py         # Package initialization marker
+        ├── __main__.py         # Global CLI terminal launcher bridge
+        ├── main.py             # Primary application loop & daemon supervisor
+        ├── cryp.ico            # Main interface visual asset icon
+        ├── app_files/          
+        │   └── run_cookie.py   # Non-blocking session timeout security guard routines
+        ├── config_files/       
+        │   ├── ai_texter.py    # Async AI interface, blinking handles, and loading canvas
+        │   ├── monitor_cookie.py # Centered material dark theme session renewal alert frame
+        │   └── styles.py       # Central layout style sheet configuration (Teal/Dark theme)
+        ├── extras/             
+        │   ├── models.py       # SQLite transactional queries and encryption insertions
+        │   ├── encryt.py       # AES-GCM 256-bit envelope encryption core logic
+        │   └── init_run.py     # Pre-flight migration guard checking and table schemas
+        └── tabs/               
+            └── base_frame_tab.py # Workspace view layout structural alignment engine
+
+```
+
+### The Non-Blocking Async AI Pipeline
+
+To keep the desktop UI running smoothly at 60 FPS while querying a local LLM, the application avoids processing work directly on the main thread loop:
+
+```text
+[Main Tkinter UI Thread] ---> Spawns ---> [Worker Thread Group]
+         |                                           |
+  (Stays Responsive:                         Initializes fresh
+   Animates Vector Spinner                    asyncio Event Loop
+   at 45ms loop refresh)                             |
+         ^                                           v
+         |-- Invokes via .after() <--- [Awaits AsyncClient.chat()]
 
 ```
 
 ---
 
-## 🛠️ Installation & Setup
+## 🗄️ Database Schema & Migrations
 
-This application features an **automated setup environment**. The custom startup engine will handle directory generation, schema configuration, and visual package installation automatically on its first run!
+The storage engine runs on an embedded SQLite model configured with native declarations parsing. To support structural metadata descriptions without data loss across legacy environments, an integrated migration guard automatically patches older tables in place on execution bounds:
 
-### 1. Clone the Repository
-
-Clone the project structure down to your local directory:
-
-```bash
-git clone [https://github.com/YOUR_USERNAME/cryptor_app.git](https://github.com/YOUR_USERNAME/cryptor_app.git)
-cd cryptor_app
-
-```
-
-### 2. Create a Virtual Environment (Recommended)
-
-Isolate your package scope from your global system environment variables:
-
-**On Windows:**
-
-```bash
-python -m venv venv
-source venv/Scripts/activate
+```sql
+CREATE TABLE IF NOT EXISTS lockedfiles(
+  file_id PRIMARY KEY UNIQUE,
+  owner_name TEXT,
+  data_file TEXT,
+  cipher_aes TEXT,
+  tag TEXT,
+  session_key TEXT,
+  ts TIMESTAMP,
+  last_updated TIMESTAMP,
+  file_title TEXT DEFAULT 'Untitled',
+  file_for TEXT DEFAULT 'General'
+);
 
 ```
 
-**On macOS/Linux:**
+---
+
+## ⚙️ Installation & Deployment Setup
+
+### 1. Fulfill Local Requirements
+
+Ensure you have the Ollama background engine up and running offline on your local machine configuration:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+# Verify ollama execution and pull down your target model weight
+ollama run llama3:8b
+
+```
+
+### 2. Install via PyPI
+
+Open your command terminal and pull down the compiled application wheel directly from the official Python Package Index:
+
+```bash
+pip install cryptor-app
 
 ```
 
 ### 3. Launch the Application
 
-Once your environment is active, you don't need to manually install dependencies using pip. Simply boot up the entry file:
+Once installed, run the global console shortcut command anywhere on your machine:
 
 ```bash
-python main.py
+cryptor-app
 
 ```
 
----
-
-## 📦 Under the Hood: First-Boot Lifecycle
-
-When you initialize `main.py` for the first time, the application safely triggers a background pipeline:
-
-1. **Dependency Engine Gating:** The interpreter checks if the modern cryptographic layout `pycryptodome` is present inside the virtual environment.
-2. **Determinate Progress Bar:** If missing, a standalone Tkinter loading bar pops up, safely installing the library package using an asynchronous worker thread while providing smooth percentage tracking metrics up to 100%.
-3. **Database Directory Carving:** The connection routine evaluates your structural file trees, automatically carving out the missing `./db/` storage directory if it doesn't exist.
-4. **Schema Initialization:** SQLite builds and verifies your secure transaction schemas (`users`, `cookies`, `lockedfiles`, `keys`) using fail-safe `IF NOT EXISTS` transaction loops.
-5. **Lazy Loading Runtime Execution:** Database and cryptographic evaluation points are deferred safely until the verification loops pass—allowing the application login panels to draw cleanly with zero system warning outputs.
+*(If your system environment PATH variables have not updated to register the shortcut instantly, you can execute the module directly by running `python -m cryptor_app`).*
 
 ---
 
-## 🧹 Contributing Guardrails (`.gitignore`)
+## 🔒 Security Commitments
 
-To protect local environments and security parameters from leaking onto remote version control trees, the repository ignores runtime binary clutter. Ensure your tracking scope complies with our `.gitignore` filters:
-
-* Do **NOT** push local configuration binaries or platform optimization wrappers (`__pycache__/`, `.pyc`, `.vscode/`).
-* Do **NOT** push active virtual environments (`venv/`).
-* Do **NOT** push structural session binaries, database caches, or security instances (`db/`, `*.db`).
-
-
-### Pro Tip for Updating Your Repo
-Before committing this documentation template, make sure your dependency references match your current working tree environment by generating a requirements index file inside your Git Bash console:
-
-```bash
-pip freeze > requirements.txt
-git add .gitignore README.md requirements.txt
-git commit -m "docs: implement robust first-boot documentation and tracking guardrails"
-git push origin main
+* **True Zero-Knowledge Execution:** All operations, encryption cycles, and text generation queries run completely localized on your client hardware machine. No internet sockets are ever opened to third-party APIs.
+* **Zero Residual Cryptographic Traces:** Background timers clear out background threading loop processes completely upon safe exit routes to guarantee zero memory address leaks or orphaned data handles remain accessible to the host OS runtime space.
 
 ```

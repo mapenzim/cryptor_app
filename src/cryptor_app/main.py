@@ -1,11 +1,16 @@
 #! /usr/bin/python3.11
+import os
+import sys
 
 import tkinter as tk
 from tkinter.messagebox import askyesno
 from datetime import datetime
 
-from config_files.progress import Progress_Frame
-from config_files.styles import Stylings
+from cryptor_app.config_files.progress import Progress_Frame
+from cryptor_app.config_files.styles import Stylings
+
+# 🛡️ Calculate the absolute package installation folder location dynamically
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def run_dependency_check():
   """ Launches standalone visual check step frames. Returns true on confirmation """
@@ -21,10 +26,10 @@ def run_dependency_check():
 
 
 def create_main_app():
-  from extras.models import verifyCookie, logout_func
-  from app_files.run_cookie import Run_Cookie
-  from app_files.welcome import welcome_frame
-  from tabs.base_frame_tab import base_frame_tab
+  from cryptor_app.extras.models import verifyCookie, logout_func
+  from cryptor_app.app_files.run_cookie import Run_Cookie
+  from cryptor_app.app_files.welcome import welcome_frame
+  from cryptor_app.tabs.base_frame_tab import base_frame_tab
 
   session_cookie = verifyCookie()
   
@@ -39,7 +44,8 @@ def create_main_app():
   Stylings(root)
 
   try: 
-    root.wm_iconbitmap("cryp.ico") 
+    icon_path = os.path.join(BASE_DIR, "cryp.ico")
+    root.wm_iconbitmap(icon_path)
   except: 
     pass
 
@@ -134,7 +140,7 @@ if __name__ == "__main__":
   
   if proceed_to_app:
     print("Dependencies verified. Initializing secure application database engines...")
-    from extras.init_run import run_connection
+    from cryptor_app.extras.init_run import run_connection
     run_connection()
     create_main_app()
   else:

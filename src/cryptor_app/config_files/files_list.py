@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter.ttk import *
-from extras.models import retrieveFiles, verifyCookie
+from cryptor_app.extras.models import retrieveFiles, verifyCookie
 from datetime import datetime
 
 lifont = ('Times', 12, 'italic')

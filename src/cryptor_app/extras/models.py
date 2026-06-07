@@ -3,7 +3,7 @@ from collections import namedtuple
 import timeit
 import os
 
-db_string = "./db/notebookserver.db"
+db_path = os.path.expanduser('~/.cryptor_app/notebookserver.db')
 
 def time_stuff(some_function):
     def wrapper(*args, **kwargs):
@@ -20,7 +20,7 @@ def namedtuple_factory(cursor, row):
 @time_stuff
 def insertUser(user_id, username, password, timestamp):
     mode = ''
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         with con:
             cur = con.cursor()
@@ -35,7 +35,7 @@ def insertUser(user_id, username, password, timestamp):
 
 @time_stuff
 def insertCookie(cookie_id, cookie_owner_id, cookie_owner_username, ts, cookie_expire_time, cookie_owner_ts, cookie_owner_last_updated, cookie_expired = False):
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     cur = con.cursor()
     cur.execute(
         '''
@@ -53,7 +53,7 @@ def insertCookie(cookie_id, cookie_owner_id, cookie_owner_username, ts, cookie_e
 @time_stuff
 def verifyCookie():
     cookie = ''
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         con.row_factory = namedtuple_factory
         cur = con.cursor()
@@ -67,7 +67,7 @@ def verifyCookie():
 
 def searchUser(user_name):
     data = ''
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         con.row_factory = namedtuple_factory
         cur = con.cursor()
@@ -80,7 +80,7 @@ def searchUser(user_name):
 
 @time_stuff
 def logout_func(cookie_id):
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         with con:
             cur = con.cursor()
@@ -92,7 +92,7 @@ def logout_func(cookie_id):
 
 @time_stuff
 def renew_cookie(cookie_id, cookie_expire_time):
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         with con:
             cur = con.cursor()
@@ -103,7 +103,7 @@ def renew_cookie(cookie_id, cookie_expire_time):
         print(ep)
 
 def retrieveUsers():
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     cur = con.cursor()
     cur.execute("SELECT username, password FROM users")
     users = cur.fetchall()
@@ -114,7 +114,7 @@ def retrieveUsers():
 def insertFile(file_id, owner_name, data_file, cipher_aes, tag, session_key, ts, file_title, file_for):
     res = ''
     try:
-        con = sql.connect(os.path.realpath(db_string))
+        con = sql.connect(os.path.realpath(db_path))
         with con:
             cur = con.cursor()
             cur.execute('''INSERT INTO lockedfiles VALUES(
@@ -129,7 +129,7 @@ def insertFile(file_id, owner_name, data_file, cipher_aes, tag, session_key, ts,
 def updateFile(file_id, data_file, tag, cipher_aes, last_updated, file_title, file_for):
     res = ''
     try:
-        con = sql.connect(os.path.realpath(db_string))
+        con = sql.connect(os.path.realpath(db_path))
         with con:
             cur = con.cursor()
             cur.execute("SELECT * FROM lockedfiles WHERE file_id = :file_id", {"file_id": file_id})
@@ -150,7 +150,7 @@ def updateFile(file_id, data_file, tag, cipher_aes, last_updated, file_title, fi
 
 @time_stuff
 def retrieveFiles(session_uname):
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     cur = con.cursor()
     cur.execute("SELECT * FROM lockedfiles WHERE owner_name = :session_uname", {"session_uname": session_uname})
     docs = cur.fetchall()
@@ -160,7 +160,7 @@ def retrieveFiles(session_uname):
 @time_stuff
 def retrieveSingleFile(file_id):
     doc = ''
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         con.row_factory = namedtuple_factory
         cur = con.cursor()
@@ -174,7 +174,7 @@ def retrieveSingleFile(file_id):
 @time_stuff
 def deleteFile(file_id):
     res = ''
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         with con:
             cur = con.cursor()
@@ -192,7 +192,7 @@ def generate_keys():
     from Crypto.Random import get_random_bytes 
     from Crypto.Cipher import PKCS1_OAEP 
 
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         item = ''
         pvt = b'private_key'
@@ -223,7 +223,7 @@ def generate_keys():
 @time_stuff
 def check_key(key_id):
     item = ''
-    con = sql.connect(os.path.realpath(db_string))
+    con = sql.connect(os.path.realpath(db_path))
     try:
         con.row_factory = namedtuple_factory
         cur = con.cursor()

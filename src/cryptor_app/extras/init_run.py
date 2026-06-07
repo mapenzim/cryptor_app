@@ -3,7 +3,7 @@ import os
 
 def run_connection():
     # 📁 Path to your database file
-    db_path = './db/notebookserver.db'
+    db_path = os.path.expanduser('~/.cryptor_app/notebookserver.db')
     
     # 🔍 Extract the directory path ('./db')
     db_dir = os.path.dirname(db_path)

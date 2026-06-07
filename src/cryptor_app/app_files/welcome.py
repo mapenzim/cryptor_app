@@ -6,8 +6,8 @@ from tkinter.ttk import Frame, Notebook
 # # # #
 # Local folders Modules
 # # # #
-from tabs.sign_in_tab import sign_in_tab
-from tabs.sign_up_tab import sign_up_tab
+from cryptor_app.tabs.sign_in_tab import sign_in_tab
+from cryptor_app.tabs.sign_up_tab import sign_up_tab
 
 def welcome_frame(root, create_main_app):
   root.geometry('256x332')
