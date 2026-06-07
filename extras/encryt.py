@@ -6,7 +6,7 @@ from extras import generate_secrets
 # 🛡️ Using absolute path layout to prevent relative tracking parent packaging errors
 from extras.models import check_key, generate_keys, insertFile, updateFile, retrieveSingleFile
 
-def lock_file(session_cookie, upd_id, text_message, mode):
+def lock_file(session_cookie, upd_id, text_message, mode, file_title="Untitled", file_for="General"):
     # 🚚 LAZY IMPORTS: Tucked cleanly inside the operational function boundary context
     from Crypto.Cipher import AES 
 
@@ -35,7 +35,9 @@ def lock_file(session_cookie, upd_id, text_message, mode):
                 cipher_aes=cipher_aes.nonce, 
                 tag=tag, 
                 session_key=new_key_pair.session_key, 
-                ts=datetime.now()
+                ts=datetime.now(),
+                file_title=file_title,
+                file_for=file_for
             )
             res = response
 
@@ -45,7 +47,9 @@ def lock_file(session_cookie, upd_id, text_message, mode):
                 data_file=ciphertext,
                 tag=tag,
                 cipher_aes=cipher_aes.nonce,
-                last_updated=datetime.now()
+                last_updated=datetime.now(),
+                file_title=file_title,
+                file_for=file_for
             )
             res = response
 

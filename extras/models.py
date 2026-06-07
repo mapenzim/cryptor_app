@@ -111,22 +111,22 @@ def retrieveUsers():
     return users
 
 @time_stuff
-def insertFile(file_id, owner_name, data_file, cipher_aes, tag, session_key, ts):
+def insertFile(file_id, owner_name, data_file, cipher_aes, tag, session_key, ts, file_title, file_for):
     res = ''
     try:
         con = sql.connect(os.path.realpath(db_string))
         with con:
             cur = con.cursor()
             cur.execute('''INSERT INTO lockedfiles VALUES(
-                :file_id, :owner_name, :data_file, :cipher_aes, :tag, :session_key, :ts, :last_updated
-              )''',{'file_id': file_id, 'owner_name': owner_name, 'data_file': data_file, 'cipher_aes':cipher_aes, 'tag': tag, 'session_key': session_key, 'ts': ts, 'last_updated': ts})
+                :file_id, :owner_name, :data_file, :cipher_aes, :tag, :session_key, :ts, :last_updated, :file_title, :file_for
+              )''',{'file_id': file_id, 'owner_name': owner_name, 'data_file': data_file, 'cipher_aes':cipher_aes, 'tag': tag, 'session_key': session_key, 'ts': ts, 'last_updated': ts, 'file_title': file_title, 'file_for': file_for})
             res = 'okay'
     except Exception as ep:
         res = ep
     return res
 
 @time_stuff
-def updateFile(file_id, data_file, tag, cipher_aes, last_updated):
+def updateFile(file_id, data_file, tag, cipher_aes, last_updated, file_title, file_for):
     res = ''
     try:
         con = sql.connect(os.path.realpath(db_string))
@@ -138,9 +138,11 @@ def updateFile(file_id, data_file, tag, cipher_aes, last_updated):
                   data_file = :data_file, 
                   tag = :tag,
                   cipher_aes = :cipher_aes,
-                  last_updated = :last_updated
+                  last_updated = :last_updated,
+                    file_title = :file_title,
+                    file_for = :file_for
                 WHERE file_id = :file_id
-              ''', {'data_file': data_file, 'tag': tag, 'cipher_aes': cipher_aes, 'last_updated': last_updated, 'file_id': file_id})
+              ''', {'data_file': data_file, 'tag': tag, 'cipher_aes': cipher_aes, 'last_updated': last_updated, 'file_id': file_id, 'file_title': file_title, 'file_for': file_for})
             res = 'okay'
     except Exception as ep:
         res = ep

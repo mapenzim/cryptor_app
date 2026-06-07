@@ -10,7 +10,7 @@ from tabs.sign_in_tab import sign_in_tab
 from tabs.sign_up_tab import sign_up_tab
 
 def welcome_frame(root, create_main_app):
-  root.geometry('256x298')
+  root.geometry('256x332')
 
   welcome_fr = Frame(root)
 

@@ -11,7 +11,6 @@ def run_connection():
     # 🛡️ If the directory doesn't exist, create it cleanly!
     if not os.path.exists(db_dir):
         print(f"Directory '{db_dir}' missing. Creating directory...")
-        # exist_ok=True prevents errors if the folder is created simultaneously by another thread
         os.makedirs(db_dir, exist_ok=True) 
     
     # Now it is 100% safe to initialize the SQLite connection
@@ -21,6 +20,8 @@ def run_connection():
     )
     
     cur = init_connection.cursor()
+    
+    # 1. Initialize Tables (Using the updated layout)
     cur.executescript('''
         BEGIN;
         CREATE TABLE IF NOT EXISTS lockedfiles(
@@ -31,7 +32,9 @@ def run_connection():
           tag TEXT,
           session_key TEXT,
           ts TIMESTAMP,
-          last_updated TIMESTAMP
+          last_updated TIMESTAMP,
+          file_title TEXT,
+          file_for TEXT
         );
         CREATE TABLE IF NOT EXISTS users(
           user_id PRIMARY KEY UNIQUE,
@@ -59,6 +62,20 @@ def run_connection():
         COMMIT;
     ''')
     
-    # Always close connections cleanly when done initializing schemas
+    # 2. Schema Migration Guard for existing databases
+    # Inspect columns inside lockedfiles table to ensure old db files match the target spec
+    cur.execute("PRAGMA table_info(lockedfiles)")
+    columns = [col[1] for col in cur.fetchall()]
+    
+    # Dynamically inject the new metadata columns if they aren't detected in an older file tree
+    if "file_title" not in columns:
+        print("Migrating schema: Adding 'file_title' column to lockedfiles...")
+        cur.execute("ALTER TABLE lockedfiles ADD COLUMN file_title TEXT DEFAULT 'Untitled'")
+        
+    if "file_for" not in columns:
+        print("Migrating schema: Adding 'file_for' column to lockedfiles...")
+        cur.execute("ALTER TABLE lockedfiles ADD COLUMN file_for TEXT DEFAULT 'General'")
+        
+    init_connection.commit()
     init_connection.close() 
-    print("Database connection established and schemas verified successfully.")
+    print("Database connection established, migrations verified, and schemas updated successfully.")

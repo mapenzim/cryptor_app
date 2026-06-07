@@ -10,7 +10,7 @@ class LicencesFrame(LabelFrame):
         # Create two side-by-side buttons instead of vertical stacking to save vertical space in the sidebar
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
-
+    
         # We pass self.master (the top-level window/root) down to the popups so they position correctly
         Button(
             self, 
@@ -28,8 +28,6 @@ class LicencesFrame(LabelFrame):
             cursor='hand2'
         ).grid(row=0, column=1, padx=5, pady=8, sticky='ew')
 
-        # 🛡️ REMOVED: self.grid(...) from inside here. 
-        # Placement is now handled explicitly by the parent dashboard layout file.
 
 
 class LicenceDetails(Frame):
@@ -42,6 +40,12 @@ class LicenceDetails(Frame):
         self.top.title('Licence Agreement')
         self.top.attributes('-topmost', True)
         self.top.configure(bg="#1e1e1e")
+
+        # The icon 
+        try: 
+          self.top.wm_iconbitmap("cryp.ico") 
+        except: 
+          pass
 
         # Dark mode flat text block configuration
         self.text_fr = tk.Text(
@@ -66,7 +70,7 @@ class LicenceDetails(Frame):
         self.text_fr['state'] = 'disabled'
 
         # Styled copyright indicator string label
-        lbl = Label(self.top, text=f"© 2021 - {time.strftime('%Y')} by Mapenzi Mudimba", font=('Arial', 9))
+        lbl = Label(self.top, background="#2d2d2b", text=f"© 2021 - {time.strftime('%Y')} by Mapenzi Mudimba", font=('Arial', 9))
         lbl.pack(side='bottom', pady=(0, 10))
 
 
@@ -80,6 +84,12 @@ class Copyright(Frame):
         self.top.title('Copyright Metadata')
         self.top.attributes('-topmost', True)
         self.top.configure(bg="#1e1e1e")
+
+        # The icon 
+        try: 
+          self.top.wm_iconbitmap("cryp.ico") 
+        except: 
+          pass
 
         # Container wrap panel
         self.frame_one = Frame(self.top, relief='flat')
@@ -107,5 +117,5 @@ class Copyright(Frame):
         self.text_f.insert(1.0, copyright_text)
         self.text_f['state'] = 'disabled'
         
-        lbl = Label(self.top, text=f"© 2021 - {time.strftime('%Y')} by Mapenzi Mudimba", font=('Arial', 9))
+        lbl = Label(self.top, text=f"© 2021 - {time.strftime('%Y')} by Mapenzi Mudimba", font=('Arial', 9), background="#2d2d2b", foreground="#a89a76")
         lbl.pack(side='bottom', pady=(0, 10))

@@ -2,100 +2,140 @@
 
 import tkinter as tk
 from tkinter.messagebox import askyesno
+from datetime import datetime
 
-# 🛡️ ONLY import lightweight modules that do NOT depend on pycryptodome globally!
 from config_files.progress import Progress_Frame
 from config_files.styles import Stylings
 
 def run_dependency_check():
-    """
-    Launches the standalone progress bar window using a separate temporary root.
-    Returns True if we are safe to proceed to the main app.
-    """
-    installer_root = tk.Tk()
-    app = Progress_Frame(installer_root)
-    
-    # Short-circuit immediately if all packages are already verified
-    if not app.missing_modules:
-        installer_root.destroy()
-        return True
+  """ Launches standalone visual check step frames. Returns true on confirmation """
+  installer_root = tk.Tk()
+  app = Progress_Frame(installer_root)
+  
+  if not app.missing_modules:
+    installer_root.destroy()
+    return True
 
-    installer_root.mainloop()
-    return app.p_result.get()
+  installer_root.mainloop()
+  return app.p_result.get()
 
 
 def create_main_app():
-    # 🚚 LAZY IMPORTS: Load heavy database/encryption components safely here
-    from extras.models import verifyCookie, logout_func
-    from app_files.run_cookie import Run_Cookie
-    from app_files.welcome import welcome_frame
-    from tabs.base_frame_tab import base_frame_tab
+  from extras.models import verifyCookie, logout_func
+  from app_files.run_cookie import Run_Cookie
+  from app_files.welcome import welcome_frame
+  from tabs.base_frame_tab import base_frame_tab
 
-    session_cookie = verifyCookie()
-    
-    root = tk.Tk()
-    root.title('Cryptor App')
-    root.resizable(0, 0)
-    
-    # Track the background loop id cleanly on root to prevent console error output on exit
-    root.check_run_id = None 
+  session_cookie = verifyCookie()
+  
+  root = tk.Tk()
+  root.title('Cryptor App')
+  root.resizable(0, 0)
+  
+  root.check_run_id = None 
+  root.active_cookie_popup = None # Pointer handle holding popup elements
+  root.monitor_active = False
 
-    # Styles
-    Stylings(root)
+  Stylings(root)
 
-    # The icon 
-    try: 
-        root.wm_iconbitmap("cryp.ico") 
-    except: 
-        pass
+  try: 
+    root.wm_iconbitmap("cryp.ico") 
+  except: 
+    pass
 
-    def lgt():
-        # Clear out our background loop timers before destroying the frame structure
-        if root.check_run_id is not None:
-            root.after_cancel(root.check_run_id)
-            root.check_run_id = None
+  def lgt():
+    if root.check_run_id is not None:
+      root.after_cancel(root.check_run_id)
+      root.check_run_id = None
 
-        if session_cookie is not None:
-            if askyesno('Exiting...', 'The programme is shutting down now. All unsaved data may be lost permanently. You will be logged out automatically. \n\nDo you wish to proceed?'):
-                logout_func(session_cookie[0])
-                root.destroy()
-        else:
-            root.destroy()
-
-    def check_run():
-        Run_Cookie(root, session_cookie, create_main_app)
-        # Always capture the dynamic loop id assignment reference
-        root.check_run_id = root.after(1000, check_run)
-
-    root.columnconfigure(0, weight=1)
-    root.protocol("WM_DELETE_WINDOW", lgt)
-
-    # 🚀 Clean Application Branching Routing
     if session_cookie is not None:
-        root.check_run_id = root.after(1000, check_run)
-        base = base_frame_tab(root, session_cookie, create_main_app)
-        base.pack(fill='both', expand=1)
+      if askyesno('Exiting...', 'The programme is shutting down now. All unsaved data may be lost permanently. You will be logged out automatically. \n\nDo you want to proceed?'):
+        logout_func(session_cookie[0])
+        root.destroy()
     else:
-        welcome = welcome_frame(root, create_main_app)
-        welcome.pack(fill='both', expand=1)
-
-    root.mainloop()
-
-
-#### RUN THE MAIN FUNCTION ####
-if __name__ == "__main__":
-    # 1. Run the safe standard-library dependency visual checkpoint FIRST
-    proceed_to_app = run_dependency_check()
+      root.destroy()
+  
+  def check_run():
+    from datetime import datetime
     
-    # 2. Only pull in the database and frame setups if dependencies are verified
-    if proceed_to_app:
-        print("Dependencies verified. Initializing secure application database engines...")
-        from extras.init_run import run_connection
+    # 🛡️ THE CRUCIAL GUARD ROUTINE: Short-circuit immediately if the window has been shut down
+    try:
+      if not root or not root.winfo_exists():
+        return
+    except Exception:
+      # If the Tcl engine is completely unmapped or dead, exit silently
+      return
+
+    # 1. Fire our dynamic, unblocked security state loop validation check
+    Run_Cookie(root, session_cookie, create_main_app)
+    
+    # Double-check existence again after Run_Cookie processes just in case it triggered an auto-logout
+    try:
+      if not root or not root.winfo_exists():
+        return
+    except Exception:
+      return
+
+    # 2. Check if components have initialized inside the active runtime workspace
+    if hasattr(root, "session_owner") and hasattr(root, "session_expire_time"):
+      now = datetime.now()
+      expiry = root.session_expire_time
+      
+      if expiry > now:
+        time_diff = expiry - now
+        total_seconds = int(time_diff.total_seconds())
         
-        # Connect to your SQL instance
-        run_connection()
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
         
-        # Launch the fully isolated app environment
-        create_main_app()
-    else:
-        print("Application startup terminated by user.")
+        countdown_string = f"{hours:02d} hr : {minutes:02d} min : {seconds:02d} sec"
+        
+        # Safe string modification configuration
+        if hasattr(root, "countdown_label") and root.countdown_label.winfo_exists():
+          root.countdown_label.config(
+            text=f"Logged in as: {root.session_owner}  •  Session Time Remaining: [ {countdown_string} ]"
+          )
+        root.title(f"Cryptor Workspace - Time Remaining: {countdown_string}")
+      else:
+        # Hard lock fallback execution if user didn't accept choices
+        root.title("Session expired! Terminating environment...")
+
+    # Continue the background loop heart beating every 1000ms
+    try:
+      if root.winfo_exists() and session_cookie is not None:
+        root.check_run_id = root.after(1000, check_run)
+    except Exception:
+      pass
+
+  root.columnconfigure(0, weight=1)
+  root.protocol("WM_DELETE_WINDOW", lgt)
+
+  if session_cookie is not None:
+    # Set base references early before thread loop spins up
+    owner_str = session_cookie[2].decode('utf-8').capitalize() if isinstance(session_cookie[2], bytes) else str(session_cookie[2]).capitalize()
+    root.session_owner = owner_str
+    root.session_expire_time = datetime.fromisoformat(session_cookie.cookie_expire_time)
+
+    base = base_frame_tab(root, session_cookie, create_main_app)
+    base.pack(fill='both', expand=1)
+    
+    # Trigger background monitor checks loop execution
+    root.check_run_id = root.after(1000, check_run)
+  else:
+    welcome = welcome_frame(root, create_main_app)
+    welcome.pack(fill='both', expand=1)
+
+  root.mainloop()
+
+
+if __name__ == "__main__":
+  proceed_to_app = run_dependency_check()
+  
+  if proceed_to_app:
+    print("Dependencies verified. Initializing secure application database engines...")
+    from extras.init_run import run_connection
+    run_connection()
+    create_main_app()
+  else:
+    print("Application startup terminated by user.")

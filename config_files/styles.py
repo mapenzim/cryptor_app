@@ -30,8 +30,14 @@ def Stylings(root):
         font=('Arial', 10, 'bold'),
         relief='flat',
         background="#4a266a",
-        foreground='#ffffff',
+        foreground="#ffffff",
         padding=(10, 6)
+    )
+
+    style.map(
+      'TButton',
+      foreground=[("pressed", "blue"), ("active", "green")],
+      background=[("pressed", "white"), ("active", "blue")]
     )
     
     # 🔴 Smooth Treeview Styling for the File List
@@ -53,6 +59,20 @@ def Stylings(root):
         foreground=[('selected', '#ffffff')]
     )
 
+    # 🟢 Custom Small Round AI button configuration rule
+    style.configure("RoundAI.TButton",
+        font=('Arial', 13, 'bold'),
+        background="#3fa8a5",
+        foreground="#ffffff",
+        width=3,          # Keeps horizontal width tightly cropped
+        padding=(2, 2),   # Compact padding creates a circular structure
+        relief="flat"
+    )
+    style.map("RoundAI.TButton",
+        background=[('pressed', '#276c6a'), ('active', '#51bcba')],
+        foreground=[('pressed', '#ffffff'), ('active', '#ffffff')]
+    )
+
     # Label Styles
     style.configure("Success.TLabel", font="Verdana 8", foreground='#a7f182', background="#c08be7")
     style.configure("Error.TLabel", font="Verdana 8", foreground='#da2319', background="#c08be7")
@@ -66,4 +86,4 @@ def Stylings(root):
     style.configure("Notebook.TNotebook", relief="flat")
     style.configure("Notebook.TFrame", relief="flat", background="#c08be7")
     style.configure("NotebookLabel.TLabel", relief="flat", background="#c08be7", foreground="white")
-    style.configure("NotebookCheckbutton.TCheckbutton", relief="flat", background="#c08be7", foreground="white")
+    style.configure("NotebookCheckbutton.TCheckbutton", relief="flat", background="#c08be7", foreground="blue")

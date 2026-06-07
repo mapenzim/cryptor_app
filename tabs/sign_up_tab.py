@@ -97,7 +97,7 @@ def sign_up_tab(notebook, root):
     style='Signup.TButton',
     command=save,
     cursor="circle"
-    )
+  )
   signup_btn['state'] = 'disabled'
   signup_btn.grid(row=7, column=0, pady=(12,0), sticky='w')
   signup_frame.pack(fill='both', expand=True)
