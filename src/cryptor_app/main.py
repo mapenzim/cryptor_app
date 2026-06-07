@@ -49,7 +49,7 @@ def create_main_app():
   except: 
     pass
 
-  def lgt():
+  def logout_transaction():
     if root.check_run_id is not None:
       root.after_cancel(root.check_run_id)
       root.check_run_id = None
@@ -115,7 +115,7 @@ def create_main_app():
       pass
 
   root.columnconfigure(0, weight=1)
-  root.protocol("WM_DELETE_WINDOW", lgt)
+  root.protocol("WM_DELETE_WINDOW", logout_transaction)
 
   if session_cookie is not None:
     # Set base references early before thread loop spins up
