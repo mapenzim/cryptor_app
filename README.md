@@ -1,4 +1,4 @@
-```markdown
+
 # Cryptor App 🛡️
 
 [![PyPI version](https://img.shields.io/pypi/v/cryptor-app.svg)](https://pypi.org/project/cryptor-app/)
