@@ -66,28 +66,6 @@ To keep the desktop UI running smoothly at 60 FPS while querying a local LLM, th
 
 ---
 
-## 🗄️ Database Schema & Migrations
-
-The storage engine runs on an embedded SQLite model configured with native declarations parsing. To support structural metadata descriptions without data loss across legacy environments, an integrated migration guard automatically patches older tables in place on execution bounds:
-
-```sql
-CREATE TABLE IF NOT EXISTS lockedfiles(
-  file_id PRIMARY KEY UNIQUE,
-  owner_name TEXT,
-  data_file TEXT,
-  cipher_aes TEXT,
-  tag TEXT,
-  session_key TEXT,
-  ts TIMESTAMP,
-  last_updated TIMESTAMP,
-  file_title TEXT DEFAULT 'Untitled',
-  file_for TEXT DEFAULT 'General'
-);
-
-```
-
----
-
 ## ⚙️ Installation & Deployment Setup
 
 ### 1. Fulfill Local Requirements
@@ -127,4 +105,3 @@ cryptor-app
 * **True Zero-Knowledge Execution:** All operations, encryption cycles, and text generation queries run completely localized on your client hardware machine. No internet sockets are ever opened to third-party APIs.
 * **Zero Residual Cryptographic Traces:** Background timers clear out background threading loop processes completely upon safe exit routes to guarantee zero memory address leaks or orphaned data handles remain accessible to the host OS runtime space.
 
-```
