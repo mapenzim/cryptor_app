@@ -12,6 +12,7 @@ from importlib.metadata import entry_points, version, PackageNotFoundError
 # 1. Base external packages that the app CANNOT run without
 REQUIRED_PACKAGES = {
   'pycryptodome': 'pycryptodome>=3.15.0',  # Dict format: {'import_name_or_key': 'pip_install_name'}
+  'ollama': 'ollama>=0.2.0'
 }
 
 # 2. Optional plugin entry points (if your app dynamically loads extensions)
