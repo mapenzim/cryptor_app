@@ -21,7 +21,7 @@ class AITexterPanel(Frame):
 
     # Prompt Entry Field
     self.prompt_var = tk.StringVar(value="Create a unique 16-character complex password with symbols.")
-    self.prompt_entry = tk.Entry(self, textvariable=self.prompt_var, bg="#dd3663", fg="#ffffff", insertbackground="#FA0909", relief="flat")
+    self.prompt_entry = tk.Entry(self, textvariable=self.prompt_var, bg="#dd3663", fg="#ffffff", insertbackground="#64A424", relief="flat")
     self.prompt_entry.pack(side='left', fill='x', expand=True, padx=(0, 6))
 
     self.ai_dropdown.bind("<<ComboboxSelected>>", self.handle_preset_change)
