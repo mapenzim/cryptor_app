@@ -1,21 +1,22 @@
-# # # # #
+# # -------------------------------------------------- # #
 # Installed Modules
-# # # # #
+# # -------------------------------------------------- # #
 import tkinter as tk
 from tkinter.ttk import Frame, Button, Label
 from datetime import datetime
 from tkinter.messagebox import showinfo, showerror, askokcancel
 from tkinter.scrolledtext import ScrolledText
 
-# # # #
+# # --------------------------------------------------# #
 # Local folders Modules
-# # # #
+# # --------------------------------------------------# #
 from cryptor_app.config_files.label_frame import LicencesFrame
 from cryptor_app.config_files.line_numbers import TextLineNumbers
 from cryptor_app.config_files.files_list import file_list
 from cryptor_app.config_files.ai_texter import AITexterPanel
-
-### Opening Frame
+# _________________________________________________________
+# Opening Frame
+# -----------------------------------------------------------
 def base_frame_tab(root, session_cookie, create_main_app):
   
   # ----------------------------------------------------

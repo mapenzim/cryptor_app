@@ -120,21 +120,34 @@ class cookie_monitor(Frame):
     
     from __main__ import create_main_app
     create_main_app()
-
+  
   def logout_user(self):
-    from cryptor_app.extras.models import logout_func
-    
-    if hasattr(self.root_window, "check_run_id") and self.root_window.check_run_id is not None:
-      self.root_window.after_cancel(self.root_window.check_run_id)
-      self.root_window.check_run_id = None
+    ''' 
+        ------- Ignore the Warning By Closing the popup -------------
+        ------- The countdown continues in the background ---------- 
+      '''
+    self.root_window.active_cookie_popup = None
+    self.cookie_box.destroy()
 
-    logout_func(self.cookie_id)
+  '''
+  def logout_user(self):
+    #from cryptor_app.extras.models import logout_func
     
-    self.root_window.monitor_active = False
+    #if hasattr(self.root_window, "check_run_id") and self.root_window.check_run_id is not None:
+    #  self.root_window.after_cancel(self.root_window.check_run_id)
+    #  self.root_window.check_run_id = None
+
+    #logout_func(self.cookie_id)
+    
+    #self.root_window.monitor_active = False
+
+    # ------- Ignore the Warning By Closing the popup -------------
+    # ------- The countdown continues in the background ----------
     self.root_window.active_cookie_popup = None
 
     self.cookie_box.destroy()
-    self.root_window.destroy()
+    #self.root_window.destroy()
     
-    from __main__ import create_main_app
-    create_main_app()
+    #from __main__ import create_main_app
+    #create_main_app()
+  '''

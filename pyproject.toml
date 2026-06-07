@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cryptor-app"
-version = "0.0.100"
+version = "0.1.001"
 authors = [
   { name="Mapenzi Mudimba", email="mudimbam@outlook.com" }
 ]
 description = "An offline, zero-trust cryptographic notebook with local async AI utilities."
 readme = "README.md"
 requires-python = ">=3.11"# 🆕 Add the formal SPDX License Expression here:
-license = "MIT"
+license = "GNU GPL 3:2007"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
