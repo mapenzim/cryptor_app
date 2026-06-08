@@ -103,7 +103,7 @@ class cookie_monitor(Frame):
     self.cookie_box.focus()
 
   def re_cookie(self):
-    from cryptor_app.extras.models import renew_cookie
+    from extras.models import renew_cookie
     
     if hasattr(self.root_window, "check_run_id") and self.root_window.check_run_id is not None:
       self.root_window.after_cancel(self.root_window.check_run_id)
@@ -118,7 +118,8 @@ class cookie_monitor(Frame):
     self.cookie_box.destroy()
     self.root_window.destroy()
     
-    from __main__ import create_main_app
+    # 🚀 FIX: Import directly from the absolute package module path
+    from cryptor_app.main import create_main_app
     create_main_app()
   
   def logout_user(self):
