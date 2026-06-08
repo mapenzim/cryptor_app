@@ -2,7 +2,7 @@
 # Cryptor App 🛡️
 
 [![PyPI version](https://img.shields.io/pypi/v/cryptor-app.svg)](https://pypi.org/project/cryptor-app/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 A zero-trust, local-first cryptographic notebook workspace designed to encrypt, store, and manage highly sensitive credentials, access keys, and multi-factor backup tokens. 
 

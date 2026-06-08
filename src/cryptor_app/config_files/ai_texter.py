@@ -17,12 +17,12 @@ class AITexterPanel(Frame):
     # Context Preset Dropdown Setup
     self.preset_var = tk.StringVar(value="Generate Secure Password")
     self.ai_dropdown = Combobox(self, textvariable=self.preset_var, values=["Generate Secure Password", "Draft Cryptographic Note", "Custom Prompt..."], state="readonly", width=22)
-    self.ai_dropdown.pack(side='left', padx=(0, 6))
+    self.ai_dropdown.pack(side='left', padx=(0, 6), ipady=4)
 
     # Prompt Entry Field
     self.prompt_var = tk.StringVar(value="Create a unique 16-character complex password with symbols.")
-    self.prompt_entry = tk.Entry(self, textvariable=self.prompt_var, bg="#1b040a", fg="#ffffff", insertbackground="#64A424", relief="flat")
-    self.prompt_entry.pack(side='left', fill='x', expand=True, padx=(0, 6))
+    self.prompt_entry = tk.Entry(self, textvariable=self.prompt_var, bg="#23586E", fg="#ffffff", insertbackground="#64A424", relief="flat")
+    self.prompt_entry.pack(side='left', fill='x', expand=True, padx=(2, 6), ipadx=4, ipady=4)
 
     self.ai_dropdown.bind("<<ComboboxSelected>>", self.handle_preset_change)
 
