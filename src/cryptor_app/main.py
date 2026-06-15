@@ -1,4 +1,4 @@
-#! /usr/bin/python3.11
+#! /usr/bin/python3.14
 import os
 import sys
 
