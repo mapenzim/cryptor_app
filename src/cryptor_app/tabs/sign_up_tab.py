@@ -1,6 +1,5 @@
 import secrets
 import tkinter as tk
-from tkinter.messagebox import askokcancel, showerror, showinfo
 from tkinter.ttk import Frame, Button, Label, Entry, Checkbutton
 from datetime import datetime
 
@@ -41,6 +40,7 @@ def sign_up_tab(notebook, root):
     # These will only evaluate AFTER the progress bar window ensures they exist!
     from cryptor_app.extras.generate_secrets import hash_sign, hashed_id
     from cryptor_app.extras.models import insertUser
+    from cryptor_app.config_files.custom_modals import CustomModals
 
     uname = email_tf.get().encode('utf-8')
     secret = pwd_tf.get().encode('utf-8')
@@ -53,16 +53,37 @@ def sign_up_tab(notebook, root):
           email_tf.delete(0, 'end')
           pwd_tf.delete(0, 'end')
           cpwd_tf.delete(0, 'end')
-          showinfo('', 'Successfully saved account.')
+          
+          # 🚀 Custom alert window replacing native showinfo
+          CustomModals.show_error(
+            parent=root,
+            title="Success",
+            message="Successfully registered secure workspace account profile."
+          )
           notebook.select(0)
         else:
-          ask = askokcancel("User exists", "This user is already registered. \nIf you are the owner of the username and forgot password, please reset your password. \nTo go back to login, please select 'OK' button below. \nIf you want to change the username, click 'Cancel' button to remain on this screen.")
+          # 🚀 Custom alert window replacing native askokcancel
+          ask = CustomModals.ask_ok_cancel(
+            parent=root,
+            title="User exists",
+            message="This user is already registered.\nIf you own this username and forgot your password, please execute a key reset sequence.\n\nClick 'OK' to navigate back to the login tab, or 'Cancel' to adjust your registration credentials on this screen."
+          )
           if ask:
             notebook.select(0)
       else:
-        showerror('', 'Accept the terms to proceed.')
+        # 🚀 Custom alert window replacing native showerror
+        CustomModals.show_error(
+          parent=root,
+          title="Terms Required",
+          message="Please read and accept the security compliance terms of service to proceed with profile creation."
+        )
     else:
-      showerror('', 'Blank form!')
+      # 🚀 Custom alert window replacing native showerror
+      CustomModals.show_error(
+        parent=root,
+        title="Blank form!",
+        message="Please specify an absolute username identifier string and master access password to initialize your container."
+      )
 
   confirm_pwd_label.trace_add('write', validate)
 

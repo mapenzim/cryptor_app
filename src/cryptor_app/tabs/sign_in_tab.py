@@ -1,17 +1,18 @@
 import secrets
-from tkinter.messagebox import askokcancel, showerror
 from tkinter.ttk import Frame, Button, Label, Entry
 from datetime import timedelta, datetime
 
 f = ('Times', 14)
 
 def sign_in_tab(notebook, root, create_main_app):
+
   # function to get user data for confirmation
   def getIn(event=None):
     # 🚚 LAZY IMPORTS: Safely contained inside the operational block.
     # These only execute AFTER the progress bar ensures they are fully installed.
     from cryptor_app.extras.generate_secrets import hashed_id, verify
     from cryptor_app.extras.models import insertCookie, searchUser
+    from cryptor_app.config_files.custom_modals import CustomModals
 
     uname = email_tf.get().encode('utf-8')
     pwd = pwd_tf.get().encode('utf-8')
@@ -23,7 +24,12 @@ def sign_in_tab(notebook, root, create_main_app):
       user = searchUser(uname)
 
       if user is None:
-        oka = askokcancel("", "User not created")
+        # 🚀 Custom dark-themed alert for missing workspace account profile
+        oka = CustomModals.ask_ok_cancel(
+          parent=root,
+          title="Account Missing",
+          message="User profile not found. Would you like to switch to the registration tab to create a new key container?"
+        )
         if oka:
           notebook.select(1)
       else:
@@ -42,9 +48,20 @@ def sign_in_tab(notebook, root, create_main_app):
           root.destroy()
           create_main_app()
         else:
-          showerror(title='Login Status', message='Invalid username or password')
+          # 🚀 Custom error frame for failed signature verification matching
+          CustomModals.show_error(
+            parent=root,
+            title="Login Status",
+            message="Invalid username or master password string entry. Security token evaluation failed."
+          )
     else:
-      showerror(title='Form is blank!', message='Please type in your credentials!')
+      # 🚀 Custom error frame for layout input validation checks
+      CustomModals.show_error(
+        parent=root,
+        title="Form is blank!",
+        message="Please type in your security workspace credentials to clear the isolation vault!"
+      )
+
 
   root.title('Welcome!')
   signin_frame = Frame(notebook, style="Notebook.TFrame", padding=16)

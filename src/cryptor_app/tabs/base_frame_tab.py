@@ -1,10 +1,10 @@
 # # -------------------------------------------------- # #
 # Installed Modules
 # # -------------------------------------------------- # #
+import os
 import tkinter as tk
 from tkinter.ttk import Frame, Button, Label
 from datetime import datetime
-from tkinter.messagebox import showinfo, showerror, askokcancel
 from tkinter.scrolledtext import ScrolledText
 
 # # --------------------------------------------------# #
@@ -14,23 +14,46 @@ from cryptor_app.config_files.label_frame import LicencesFrame
 from cryptor_app.config_files.line_numbers import TextLineNumbers
 from cryptor_app.config_files.files_list import file_list
 from cryptor_app.config_files.ai_texter import AITexterPanel
+from cryptor_app.config_files.custom_modals import CustomModals
+
 # _________________________________________________________
 # Opening Frame
 # -----------------------------------------------------------
 def base_frame_tab(root, session_cookie, create_main_app):
-  
   # ----------------------------------------------------
-  # 🖥️ TASKBAR-AWARE FIXED MAXIMIZATION
+  # 🖥️ TASKBAR-AWARE FIXED MAXIMIZATION (LINUX / WINDOWS)
   # ----------------------------------------------------
   root.update_idletasks()
   root.state('normal')
   
-  screen_width = root.winfo_screenwidth()
-  screen_height = root.winfo_screenheight()
-  custom_width = screen_width
-  custom_height = screen_height - 75 
-  
-  root.geometry(f"{custom_width}x{custom_height}+0+0")
+  # Default fallback sizes
+  custom_width = root.winfo_screenwidth()
+  custom_height = root.winfo_screenheight() - 75
+  start_x = 0
+  start_y = 0
+
+  # 🐧 Native Linux Check: Query the X11 usable workarea geometry bounds
+  if os.name != 'nt':
+    try:
+      # Query the structural root window property manager for net workarea dimensions
+      import subprocess
+      output = subprocess.check_output("xprop -root _NET_WORKAREA", shell=True).decode()
+      
+      # xprop returns format: _NET_WORKAREA(CARDINAL) = x, y, width, height, ...
+      if "=" in output:
+        workarea_data = output.split("=")[1].strip().split(",")
+        start_x = int(workarea_data[0].strip())
+        start_y = int(workarea_data[1].strip())
+        custom_width = int(workarea_data[2].strip())
+        custom_height = int(workarea_data[3].strip())
+    except Exception:
+      # Fallback to standard offset math if xprop isn't present on the system
+      start_x = 72 # Average width of the default Ubuntu Docker panel
+      custom_width = root.winfo_screenwidth() - start_x
+      custom_height = root.winfo_screenheight() - 75
+
+  # 🚀 Apply the calculated offsets perfectly clearing the left docker edge
+  root.geometry(f"{custom_width}x{custom_height}+{start_x}+{start_y}")
   root.update_idletasks()
   root.resizable(0, 0)
   
@@ -174,54 +197,62 @@ def base_frame_tab(root, session_cookie, create_main_app):
       savebtn['cursor'] = 'hand2'
       text_scroll.focus()
     except Exception as err:
-      showerror("Decryption Failure", f"Could not read encrypted data block:\n{str(err)}")
+      CustomModals.show_error(root, "Decryption Failure", f"Could not read encrypted data block:\n{str(err)}")
 
   sidebar_explorer.lst_files.bind('<<TreeviewSelect>>', auto_load_file)
 
   def file_delete_handler():
     current_selection = sidebar_explorer.doc_id.get()
     if not current_selection:
-      showerror("Selection Error", "Please select a file from the list first.")
+      CustomModals.show_error(root, "Selection Error", "Please select a file from the list first.")
       return
-    my_del = askokcancel('Delete file', f'Deleting: {title_entry.get("1.0", "end-1c").strip() if title_entry.get("1.0", "end-1c").strip() else current_selection}.\nThis action is permanent. Proceed?')
+    
+    display_title = title_entry.get("1.0", "end-1c").strip()
+    target_name = display_title if display_title else current_selection
+    
+    my_del = CustomModals.ask_ok_cancel(
+      parent=root,
+      title="Delete File",
+      message=f"Permanently deleting: {target_name}\nThis operation removes data completely from database nodes. Proceed?"
+    )
     if my_del:
       from cryptor_app.extras.models import deleteFile
       deleteFile(current_selection.encode('utf-8'))
       if upd_id.get() == current_selection: new_doc()
       else: sidebar_explorer.doc_id.set('')
       sidebar_explorer.refresh_list()
-      showinfo('Success', 'File removed successfully.')
+      CustomModals.show_error(root, "Success", "File record permanently wiped from storage nodes.")
 
   def file_locker():
     from cryptor_app.extras.encryt import lock_file
     t_str, f_str = title_entry.get("1.0", "end-1c").strip(), for_var.get().strip()
     if not t_str or not f_str:
-      showerror('Input Missing', 'Please provide both a Document Title and a Purpose before locking.')
+      CustomModals.show_error(root, 'Input Missing', 'Please provide both a Document Title and a Purpose before locking.')
       return
     content = text_scroll.get(1.0, 'end-1c')
     lockm = lock_file(session_cookie, upd_id=None, text_message=content, mode='create', file_title=t_str, file_for=f_str)
     if lockm != 'okay': 
-      showerror('Error', str(lockm))
+      CustomModals.show_error(root, 'Error', str(lockm))
       text_scroll.focus()
     else: 
       sidebar_explorer.refresh_list()
       new_doc()
-      showinfo('Success', 'New document safely encrypted and stored!')
+      CustomModals.show_error(root, 'Success', 'New document safely encrypted and stored under Copyleft isolation parameters.')
 
   def file_update():
     from cryptor_app.extras.encryt import lock_file
     t_str, f_str = title_entry.get("1.0", "end-1c").strip(), for_var.get().strip()
     if not t_str or not f_str:
-      showerror('Input Missing', 'Document Title and Purpose headers cannot be empty.')
+      CustomModals.show_error(root, 'Input Missing', 'Document Title and Purpose headers cannot be empty.')
       return
     content = text_scroll.get(1.0, 'end-1c')
     lockm = lock_file(session_cookie, upd_id, text_message=content, mode='update', file_title=t_str, file_for=f_str)
     if lockm != 'okay': 
-      showerror('Error', str(lockm))
+      CustomModals.show_error(root, 'Error', str(lockm))
       text_scroll.focus()
     else: 
       sidebar_explorer.refresh_list()
-      showinfo('Success', 'Document updated successfully!')
+      CustomModals.show_error(root, 'Success', 'Document transaction payload cipher addresses updated successfully!')
 
   def new_doc():
     upd_id.set('')

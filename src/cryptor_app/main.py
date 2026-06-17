@@ -3,7 +3,6 @@ import os
 import sys
 
 import tkinter as tk
-from tkinter.messagebox import askyesno
 from datetime import datetime
 
 from cryptor_app.config_files.progress import Progress_Frame
@@ -49,13 +48,22 @@ def create_main_app():
   except: 
     pass
 
+  
   def logout_transaction():
+    from cryptor_app.config_files.custom_modals import CustomModals
+
     if root.check_run_id is not None:
       root.after_cancel(root.check_run_id)
       root.check_run_id = None
 
     if session_cookie is not None:
-      if askyesno('Exiting...', 'The programme is shutting down now. All unsaved data may be lost permanently. You will be logged out automatically. \n\nDo you want to proceed?'):
+      # 🚀 Custom dark-themed alert replacing native askyesno
+      proceed = CustomModals.ask_ok_cancel(
+        parent=root,
+        title="Exiting...",
+        message="The application is shutting down now. All unsaved workspace changes may be lost permanently. You will be logged out automatically.\n\nDo you want to proceed?"
+      )
+      if proceed:
         logout_func(session_cookie[0])
         root.destroy()
     else:

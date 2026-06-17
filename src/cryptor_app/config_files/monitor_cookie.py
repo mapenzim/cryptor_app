@@ -95,11 +95,11 @@ class cookie_monitor(Frame):
       cursor='hand2', 
       text="Log Out Now", 
       style='Delete.TButton', 
-      command=self.logout_user
+      command=self.dismiss_warning
     )
     self.del_btn.grid(row=0, column=1, sticky=tk.E, padx=(6, 0))
 
-    self.cookie_box.protocol("WM_DELETE_WINDOW", self.logout_user)
+    self.cookie_box.protocol("WM_DELETE_WINDOW", self.dismiss_warning)
     self.cookie_box.focus()
 
   def re_cookie(self):
@@ -122,33 +122,14 @@ class cookie_monitor(Frame):
     from cryptor_app.main import create_main_app
     create_main_app()
   
-  def logout_user(self):
-    ''' 
-        ------- Ignore the Warning By Closing the popup -------------
-        ------- The countdown continues in the background ---------- 
-      '''
+  def dismiss_warning(self):
+    """
+    ------- Ignore the Warning By Closing the popup -------------
+    ------- The countdown continues in the background ---------- 
+    """
+    # Clear the reference so the window knows no popup is active
     self.root_window.active_cookie_popup = None
+    
+    # Safely close the top-level Tkinter modal frame window
     self.cookie_box.destroy()
 
-  '''
-  def logout_user(self):
-    #from cryptor_app.extras.models import logout_func
-    
-    #if hasattr(self.root_window, "check_run_id") and self.root_window.check_run_id is not None:
-    #  self.root_window.after_cancel(self.root_window.check_run_id)
-    #  self.root_window.check_run_id = None
-
-    #logout_func(self.cookie_id)
-    
-    #self.root_window.monitor_active = False
-
-    # ------- Ignore the Warning By Closing the popup -------------
-    # ------- The countdown continues in the background ----------
-    self.root_window.active_cookie_popup = None
-
-    self.cookie_box.destroy()
-    #self.root_window.destroy()
-    
-    #from __main__ import create_main_app
-    #create_main_app()
-  '''
