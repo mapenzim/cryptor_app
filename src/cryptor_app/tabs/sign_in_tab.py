@@ -28,7 +28,7 @@ def sign_in_tab(notebook, root, create_main_app):
         oka = CustomModals.ask_ok_cancel(
           parent=root,
           title="Account Missing",
-          message="User profile not found. Would you like to switch to the registration tab to create a new key container?"
+          message="User profile not found. Would you like to switch to the registration tab to create a new key account?"
         )
         if oka:
           notebook.select(1)

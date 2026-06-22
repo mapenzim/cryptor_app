@@ -16,13 +16,13 @@ from cryptor_app.config_files.files_list import file_list
 from cryptor_app.config_files.ai_texter import AITexterPanel
 from cryptor_app.config_files.custom_modals import CustomModals
 
-# _________________________________________________________
+# __________________*____________________*___________________
 # Opening Frame
 # -----------------------------------------------------------
 def base_frame_tab(root, session_cookie, create_main_app):
-  # ----------------------------------------------------
+  # ------------------------------------------------------
   # 🖥️ TASKBAR-AWARE FIXED MAXIMIZATION (LINUX / WINDOWS)
-  # ----------------------------------------------------
+  # ----------------*---------------------*-----------------
   root.update_idletasks()
   root.state('normal')
   
@@ -213,7 +213,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
     my_del = CustomModals.ask_ok_cancel(
       parent=root,
       title="Delete File",
-      message=f"Permanently deleting: {target_name}\nThis operation removes data completely from database nodes. Proceed?"
+      message=f"Permanently deleting: {target_name}\n\nThis operation removes data completely from database nodes. Proceed?"
     )
     if my_del:
       from cryptor_app.extras.models import deleteFile
@@ -237,7 +237,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
     else: 
       sidebar_explorer.refresh_list()
       new_doc()
-      CustomModals.show_error(root, 'Success', 'New document safely encrypted and stored under Copyleft isolation parameters.')
+      CustomModals.show_error(root, 'Success', 'New document safely encrypted and stored under list parameters.')
 
   def file_update():
     from cryptor_app.extras.encryt import lock_file

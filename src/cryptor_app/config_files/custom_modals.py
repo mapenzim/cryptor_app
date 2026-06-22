@@ -55,7 +55,9 @@ class CustomModals:
       text=message, 
       wraplength=380, 
       justify="center",
-      font=("Helvetica", 10)
+      font=("Helvetica", 10),
+      foreground="#ffffff",
+      background="#1e1e1e"
     )
     msg_label.pack(fill="both", expand=True, pady=(0, 15))
     
@@ -97,7 +99,8 @@ class CustomModals:
       content_frame,
       text="⚠️ CRITICAL ERROR",
       font=("Helvetica", 11, "bold"),
-      foreground="#ff5555" # Destructive Crimson red warning text mapping
+      foreground="#ff5555", # Destructive Crimson red warning text mapping
+      background="#1e1e1e"
     )
     error_header.pack(anchor="w", pady=(0, 5))
     
@@ -106,7 +109,9 @@ class CustomModals:
       text=message, 
       wraplength=380, 
       justify="left",
-      font=("Helvetica", 10)
+      font=("Helvetica", 10),
+      background="#1e1e1e",
+      foreground="#E74747"
     )
     msg_label.pack(fill="both", expand=True, pady=(0, 15))
     

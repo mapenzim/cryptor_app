@@ -5,6 +5,8 @@ from datetime import datetime
 import threading
 import asyncio
 
+from cryptor_app.config_files.custom_modals import CustomModals
+ 
 class AITexterPanel(Frame):
   def __init__(self, master, text_scroll, title_entry, for_var, editor_container):
     super().__init__(master, style="Header.TFrame")
@@ -54,13 +56,21 @@ class AITexterPanel(Frame):
   def trigger_ai_generation(self):
     prompt_text = self.prompt_var.get().strip()
     if not prompt_text:
-      showerror("Prompt Empty", "Please type an AI instruction or select a security preset first.")
+      CustomModals.show_error(
+        parent=self.editor_container,
+        title="Empty Prompt",
+        message="Please type an AI instruction or select a security preset first."
+      )
       return
 
     # Smart Insertion Guard
     current_content = self.text_scroll.get(1.0, 'end-1c').strip()
     if current_content:
-      confirm = askokcancel("Overwrite Warning", "The workspace contains active content. Generating fresh text will wipe the screen. Continue?")
+      confirm = CustomModals.ask_ok_cancel(
+        parent=self.editor_container,
+        title="Overwrite Warning",
+        message="The workspace contains active content. Generating fresh text will wipe the screen. Continue?"
+      )
       if not confirm:
         return
 
@@ -145,6 +155,7 @@ class AITexterPanel(Frame):
     self.text_scroll.insert(1.0, result_text)
     
     if "Password" in result_text:
+      self.title_entry.delete(1.0, 'end')
       self.title_entry.insert("1.0","Generated Access Token")
       self.for_var.set("Secure Credential Access Key")
     
@@ -157,7 +168,11 @@ class AITexterPanel(Frame):
       self.overlay.destroy()
       self.overlay = None
         
-    showerror("AI API Error", f"Transaction failed:\n{error_message}")
+    CustomModals.show_error(
+      parent=self.editor_container,
+      title="AI API Error",
+      message=f"Transaction failed:\n{error_message}"
+    )
     self.ai_btn.config(state="normal", text="●", style="RoundAI.TButton")
 
 
@@ -214,7 +229,7 @@ class AILoadingOverlay(Frame):
     self.spinner_canvas.create_oval(
       6, 6, 54, 54, 
       outline="#252526", 
-      width=3
+      width=8
     )
     
     # Render the active accent loading arc highlight
@@ -224,7 +239,7 @@ class AILoadingOverlay(Frame):
       extent=90, 
       style="arc", 
       outline="#3fa8a5", 
-      width=4,
+      width=12,
       activedash=None
     )
     

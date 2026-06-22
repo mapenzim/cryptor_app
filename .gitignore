@@ -150,3 +150,9 @@ db/
 *.pub
 *.key
 *.secret
+
+# --- Env Files and Folders ---#
+bin
+lib
+lib64
+include
