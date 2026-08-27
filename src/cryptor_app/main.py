@@ -10,6 +10,7 @@ from cryptor_app.config_files.styles import Stylings
 
 # 🛡️ Calculate the absolute package installation folder location dynamically
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+EXIT_APPLICATION = object()
 
 def run_dependency_check():
   """ Launches standalone visual check step frames. Returns true on confirmation """
@@ -23,15 +24,25 @@ def run_dependency_check():
   installer_root.mainloop()
   return app.p_result.get()
 
-
-def create_main_app():
+def create_main_app(session_context=None):
+  # The application runner initializes the database before constructing screens.
   from cryptor_app.extras.models import verifyCookie, logout_func
   from cryptor_app.app_files.run_cookie import Run_Cookie
   from cryptor_app.app_files.welcome import welcome_frame
   from cryptor_app.tabs.base_frame_tab import base_frame_tab
 
-  session_cookie = verifyCookie()
-  
+  session_cookie = None
+  vault_key = None
+  if session_context is not None:
+    candidate = session_context.get("cookie")
+    if candidate is not None:
+      session_cookie = verifyCookie(candidate.cookie_id)
+      vault_key = session_context.get("vault_key")
+    if session_cookie is None or vault_key is None:
+      session_context = None
+      session_cookie = None
+      vault_key = None
+
   root = tk.Tk()
   root.title('Cryptor App')
   root.resizable(0, 0)
@@ -39,6 +50,7 @@ def create_main_app():
   root.check_run_id = None 
   root.active_cookie_popup = None # Pointer handle holding popup elements
   root.monitor_active = False
+  root.next_session = EXIT_APPLICATION
 
   Stylings(root)
 
@@ -48,16 +60,20 @@ def create_main_app():
   except: 
     pass
 
-  
+  def switch_session(next_session):
+    if root.check_run_id is not None:
+      try:
+        root.after_cancel(root.check_run_id)
+      except Exception:
+        pass
+      root.check_run_id = None
+    root.next_session = next_session
+    root.destroy()
+
   def logout_transaction():
     from cryptor_app.config_files.custom_modals import CustomModals
 
-    if root.check_run_id is not None:
-      root.after_cancel(root.check_run_id)
-      root.check_run_id = None
-
     if session_cookie is not None:
-      # 🚀 Custom dark-themed alert replacing native askyesno
       proceed = CustomModals.ask_ok_cancel(
         parent=root,
         title="Exiting...",
@@ -65,32 +81,27 @@ def create_main_app():
       )
       if proceed:
         logout_func(session_cookie[0])
-        root.destroy()
+        switch_session(EXIT_APPLICATION)
     else:
-      root.destroy()
+      switch_session(EXIT_APPLICATION)
   
   def check_run():
     from datetime import datetime
     
-    # 🛡️ THE CRUCIAL GUARD ROUTINE: Short-circuit immediately if the window has been shut down
     try:
       if not root or not root.winfo_exists():
         return
     except Exception:
-      # If the Tcl engine is completely unmapped or dead, exit silently
       return
 
-    # 1. Fire our dynamic, unblocked security state loop validation check
-    Run_Cookie(root, session_cookie, create_main_app)
+    Run_Cookie(root, session_cookie, switch_session)
     
-    # Double-check existence again after Run_Cookie processes just in case it triggered an auto-logout
     try:
       if not root or not root.winfo_exists():
         return
     except Exception:
       return
 
-    # 2. Check if components have initialized inside the active runtime workspace
     if hasattr(root, "session_owner") and hasattr(root, "session_expire_time"):
       now = datetime.now()
       expiry = root.session_expire_time
@@ -105,17 +116,14 @@ def create_main_app():
         
         countdown_string = f"{hours:02d} hr : {minutes:02d} min : {seconds:02d} sec"
         
-        # Safe string modification configuration
         if hasattr(root, "countdown_label") and root.countdown_label.winfo_exists():
           root.countdown_label.config(
             text=f"Logged in as: {root.session_owner}  •  Session Time Remaining: [ {countdown_string} ]"
           )
         root.title(f"Cryptor Workspace - Time Remaining: {countdown_string}")
       else:
-        # Hard lock fallback execution if user didn't accept choices
         root.title("Session expired! Terminating environment...")
 
-    # Continue the background loop heart beating every 1000ms
     try:
       if root.winfo_exists() and session_cookie is not None:
         root.check_run_id = root.after(1000, check_run)
@@ -126,30 +134,45 @@ def create_main_app():
   root.protocol("WM_DELETE_WINDOW", logout_transaction)
 
   if session_cookie is not None:
-    # Set base references early before thread loop spins up
     owner_str = session_cookie[2].decode('utf-8').capitalize() if isinstance(session_cookie[2], bytes) else str(session_cookie[2]).capitalize()
     root.session_owner = owner_str
     root.session_expire_time = datetime.fromisoformat(session_cookie.cookie_expire_time)
 
-    base = base_frame_tab(root, session_cookie, create_main_app)
+    base = base_frame_tab(
+      root,
+      session_cookie,
+      vault_key,
+      switch_session,
+    )
     base.pack(fill='both', expand=1)
     
-    # Trigger background monitor checks loop execution
     root.check_run_id = root.after(1000, check_run)
   else:
-    welcome = welcome_frame(root, create_main_app)
+    welcome = welcome_frame(root, switch_session)
     welcome.pack(fill='both', expand=1)
 
   root.mainloop()
+  return root.next_session
 
+
+def run_application():
+  """Run each screen transition sequentially, without nested Tk mainloops."""
+  from cryptor_app.extras.init_run import run_connection
+  from cryptor_app.extras.models import expire_all_cookies
+
+  run_connection()
+  expire_all_cookies()
+  session_context = None
+  while True:
+    session_context = create_main_app(session_context)
+    if session_context is EXIT_APPLICATION:
+      return 0
 
 if __name__ == "__main__":
   proceed_to_app = run_dependency_check()
   
   if proceed_to_app:
     print("Dependencies verified. Initializing secure application database engines...")
-    from cryptor_app.extras.init_run import run_connection
-    run_connection()
-    create_main_app()
+    raise SystemExit(run_application())
   else:
     print("Application startup terminated by user.")

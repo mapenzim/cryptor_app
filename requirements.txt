@@ -1,0 +1,5 @@
+pycryptodome
+ollama
+build
+wheel
+twine

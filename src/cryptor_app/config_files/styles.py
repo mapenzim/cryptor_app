@@ -1,11 +1,18 @@
 from tkinter.ttk import Style
+import platform
 
 def Stylings(root):
   style = Style(root)
   
-  # 🛡️ Force 'clam' theme to unlock full background and hover color mappings
-  if "clam" in style.theme_names():
+  # 🍏 Step 1: Force cross-platform theme engine instantly before processing configurations
+  if platform.system() == "Darwin":
     style.theme_use("clam")
+
+  # 🎨 Step 2: Manually override the absolute global root style canvas configuration rule
+  style.configure(".", background="#1e1e1e", foreground="#ffffff")
+
+  # Step 3: Explicitly bind backup color arrays to the root component level
+  root.configure(bg="#1e1e1e")
 
   # Dynamic Hover & Press states for buttons
   style.map("Signup.TButton",
@@ -35,9 +42,9 @@ def Stylings(root):
   )
 
   style.map(
-  'TButton',
-  foreground=[("pressed", "blue"), ("active", "green")],
-  background=[("pressed", "white"), ("active", "blue")]
+    'TButton',
+    foreground=[("pressed", "blue"), ("active", "green")],
+    background=[("pressed", "white"), ("active", "blue")]
   )
   
   # 🔴 Smooth Treeview Styling for the File List
@@ -64,8 +71,8 @@ def Stylings(root):
     font=('Arial', 13, 'bold'),
     background="#3fa8a5",
     foreground="#ffffff",
-    width=3,    # Keeps horizontal width tightly cropped
-    padding=(2, 2),   # Compact padding creates a circular structure
+    width=3,
+    padding=(2, 2),
     relief="flat"
   )
   style.map("RoundAI.TButton",

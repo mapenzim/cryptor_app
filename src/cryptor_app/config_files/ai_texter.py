@@ -4,6 +4,7 @@ from tkinter.messagebox import showerror, askokcancel
 from datetime import datetime
 import threading
 import asyncio
+import queue
 
 from cryptor_app.config_files.custom_modals import CustomModals
  
@@ -42,6 +43,7 @@ class AITexterPanel(Frame):
     self.is_generating = False
     self.blink_state = False
     self.overlay = None
+    self.worker_results = queue.Queue()
 
   def handle_preset_change(self, event):
     choice = self.preset_var.get()
@@ -87,10 +89,25 @@ class AITexterPanel(Frame):
     worker = threading.Thread(target=self._thread_run_loop, args=(prompt_text,))
     worker.daemon = True
     worker.start()
+    self.after(100, self._poll_worker_result)
 
   def _thread_run_loop(self, prompt_text):
     """ Secondary isolation bridge that safely initializes a fresh async loop inside the thread """
     asyncio.run(self.async_ai_worker(prompt_text))
+
+  def _poll_worker_result(self):
+    if not self.winfo_exists():
+      return
+    try:
+      result_type, payload = self.worker_results.get_nowait()
+    except queue.Empty:
+      if self.is_generating:
+        self.after(100, self._poll_worker_result)
+      return
+    if result_type == "ok":
+      self.direct_ai_output_to_editor(payload)
+    else:
+      self.handle_worker_error(payload)
 
   def animate_blinking(self):
     """ Continuous style-toggling function running on a background loop """
@@ -111,18 +128,17 @@ class AITexterPanel(Frame):
   async def async_ai_worker(self, prompt_text):
     try:
       import secrets, string
-      from ollama import AsyncClient
-      
       # Use non-blocking async sleep instead of time.sleep()
       await asyncio.sleep(1)
-
-      client = AsyncClient()
 
       if "password" in prompt_text.lower():
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*()_+"
         generated_result = "".join(secrets.choice(alphabet) for _ in range(16))
         generated_result = f"--- GENERATED SECURE CREDENTIAL ---\n\nPassword: {generated_result}\n\nGenerated On: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n[Keep this note encrypted for maximum safety]"
       else:
+        from ollama import AsyncClient
+
+        client = AsyncClient(timeout=60.0)
         response = await client.chat(
           model='llama3:8b',
           messages=[
@@ -138,11 +154,10 @@ class AITexterPanel(Frame):
         )
         generated_result = response['message']['content']
 
-      # Route data output back to GUI loop safely
-      self.winfo_toplevel().after(0, lambda: self.direct_ai_output_to_editor(generated_result))
+      self.worker_results.put(("ok", generated_result))
 
     except Exception as e:
-      self.winfo_toplevel().after(0, lambda: self.handle_worker_error(str(e)))
+      self.worker_results.put(("error", str(e)))
 
   def direct_ai_output_to_editor(self, result_text):
     self.is_generating = False

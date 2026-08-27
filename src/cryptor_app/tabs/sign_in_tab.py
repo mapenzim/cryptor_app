@@ -4,17 +4,28 @@ from datetime import timedelta, datetime
 
 f = ('Times', 14)
 
-def sign_in_tab(notebook, root, create_main_app):
+def sign_in_tab(notebook, root, switch_session):
 
   # function to get user data for confirmation
   def getIn(event=None):
     # 🚚 LAZY IMPORTS: Safely contained inside the operational block.
     # These only execute AFTER the progress bar ensures they are fully installed.
-    from cryptor_app.extras.generate_secrets import hashed_id, verify
-    from cryptor_app.extras.models import insertCookie, searchUser
+    from cryptor_app.extras.generate_secrets import (
+      derive_vault_key,
+      hash_sign,
+      hashed_id,
+      is_legacy_signature,
+      verify,
+    )
+    from cryptor_app.extras.models import (
+      insertCookie,
+      searchUser,
+      upgrade_legacy_account,
+    )
+    from cryptor_app.extras.encryt import prepare_legacy_migration
     from cryptor_app.config_files.custom_modals import CustomModals
 
-    uname = email_tf.get().encode('utf-8')
+    uname = email_tf.get().strip().encode('utf-8')
     pwd = pwd_tf.get().encode('utf-8')
 
     expire_d = timedelta(minutes=45)
@@ -32,9 +43,39 @@ def sign_in_tab(notebook, root, create_main_app):
         )
         if oka:
           notebook.select(1)
+      elif user == "ERROR":
+        CustomModals.show_error(
+          parent=root,
+          title="Database Error",
+          message="The user database could not be read. No session was created."
+        )
       else:
-        if user != "ERROR" and verify(cookie=user.user_name, sig=user.password, secret=pwd) == True:
-          insertCookie(
+        if verify(cookie=user.user_name, sig=user.password, secret=pwd):
+          try:
+            password_signature = user.password
+            if is_legacy_signature(password_signature):
+              password_signature = hash_sign(cookie=user.user_name, secret=pwd)
+              vault_key = derive_vault_key(password_signature, pwd)
+              migrated_files = prepare_legacy_migration(user.user_name, vault_key)
+              migration = upgrade_legacy_account(
+                user.user_id,
+                user.user_name,
+                password_signature,
+                migrated_files,
+              )
+              if migration != "success":
+                raise RuntimeError(str(migration))
+            else:
+              vault_key = derive_vault_key(password_signature, pwd)
+          except Exception as exc:
+            CustomModals.show_error(
+              parent=root,
+              title="Vault Migration Failed",
+              message=f"Your existing data was left unchanged.\n\n{exc}"
+            )
+            return
+
+          session_cookie = insertCookie(
             cookie_id=hashed_id(secrets.token_bytes(24)), 
             cookie_owner_id=user.user_id, 
             cookie_owner_username=user.user_name, 
@@ -45,8 +86,7 @@ def sign_in_tab(notebook, root, create_main_app):
           )
           email_tf.delete(0, 'end')
           pwd_tf.delete(0, 'end')
-          root.destroy()
-          create_main_app()
+          switch_session({"cookie": session_cookie, "vault_key": vault_key})
         else:
           # 🚀 Custom error frame for failed signature verification matching
           CustomModals.show_error(

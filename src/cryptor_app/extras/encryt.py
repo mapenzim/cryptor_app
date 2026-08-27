@@ -1,89 +1,162 @@
-from tkinter.messagebox import showerror, showinfo
+import base64
 import secrets
 from datetime import datetime
 
 from cryptor_app.extras import generate_secrets
-# 🛡️ Using absolute path layout to prevent relative tracking parent packaging errors
-from cryptor_app.extras.models import check_key, generate_keys, insertFile, updateFile, retrieveSingleFile
+from cryptor_app.extras.models import (
+  insertFile,
+  retrieveFiles,
+  retrieveSingleFile,
+  updateFile,
+)
 
-def lock_file(session_cookie, upd_id, text_message, mode, file_title="Untitled", file_for="General"):
-  # 🚚 LAZY IMPORTS: Tucked cleanly inside the operational function boundary context
-  from Crypto.Cipher import AES 
 
-  res = None
+KEY_FORMAT = b"v2:"
 
-  if len(text_message) > 5:
-    pk = b'public_key'
 
-    new_key_pair = check_key(pk)
+def _owner_name(session_cookie):
+  return session_cookie.cookie_owner_username
 
-    if new_key_pair is None:
-      generate_keys()
-      new_key_pair = check_key(pk)
-    else:
-      new_key_pair = check_key(pk)
-    
-    # Encrypt the data with the AES session key
-    cipher_aes = AES.new(new_key_pair.session_key, AES.MODE_EAX)
-    ciphertext, tag = cipher_aes.encrypt_and_digest(text_message.encode("utf-8"))
 
-    if mode == 'create':
-      response = insertFile(
-        file_id=generate_secrets.hashed_id(secrets.token_bytes(24)), 
-        owner_name=session_cookie[2], 
-        data_file=ciphertext, 
-        cipher_aes=cipher_aes.nonce, 
-        tag=tag, 
-        session_key=new_key_pair.session_key, 
-        ts=datetime.now(),
-        file_title=file_title,
-        file_for=file_for
-      )
-      res = response
+def _wrap_file_key(vault_key, file_key):
+  from Crypto.Cipher import AES
 
-    if mode == 'update':
-      response = updateFile(
-        file_id=upd_id.get().encode('utf-8'), 
-        data_file=ciphertext,
-        tag=tag,
-        cipher_aes=cipher_aes.nonce,
-        last_updated=datetime.now(),
-        file_title=file_title,
-        file_for=file_for
-      )
-      res = response
+  cipher = AES.new(vault_key, AES.MODE_EAX)
+  encrypted_key, tag = cipher.encrypt_and_digest(file_key)
+  packed = cipher.nonce + tag + encrypted_key
+  return KEY_FORMAT + base64.urlsafe_b64encode(packed)
 
+
+def _unwrap_file_key(vault_key, wrapped_key):
+  from Crypto.Cipher import AES
+
+  if not isinstance(wrapped_key, bytes) or not wrapped_key.startswith(KEY_FORMAT):
+    raise ValueError("Document does not contain a protected v2 key")
+  packed = base64.urlsafe_b64decode(wrapped_key[len(KEY_FORMAT):])
+  if len(packed) != 64:
+    raise ValueError("Wrapped document key is malformed")
+  nonce, tag, ciphertext = packed[:16], packed[16:32], packed[32:]
+  return AES.new(vault_key, AES.MODE_EAX, nonce).decrypt_and_verify(ciphertext, tag)
+
+
+def _encrypt_payload(plaintext, vault_key):
+  from Crypto.Cipher import AES
+
+  if not isinstance(vault_key, bytes) or len(vault_key) != 32:
+    raise ValueError("The authenticated vault key is unavailable")
+  file_key = secrets.token_bytes(32)
+  cipher = AES.new(file_key, AES.MODE_EAX)
+  ciphertext, tag = cipher.encrypt_and_digest(plaintext)
+  wrapped_key = _wrap_file_key(vault_key, file_key)
+  return ciphertext, cipher.nonce, tag, wrapped_key
+
+
+def _decrypt_payload(docfile, vault_key, allow_legacy=False):
+  from Crypto.Cipher import AES
+
+  wrapped_key = docfile.session_key
+  if isinstance(wrapped_key, bytes) and wrapped_key.startswith(KEY_FORMAT):
+    file_key = _unwrap_file_key(vault_key, wrapped_key)
+  elif allow_legacy and isinstance(wrapped_key, bytes):
+    # Legacy files stored their raw AES key in this column. This path exists only
+    # long enough to migrate an authenticated user's old records atomically.
+    file_key = wrapped_key
   else:
-    res = 'The text editor is blank or the characters are less than the required minimum number. Type something first to continue.'
+    raise ValueError("This document still requires secure legacy migration")
 
-  return res
+  cipher = AES.new(file_key, AES.MODE_EAX, docfile.cipher_aes)
+  return cipher.decrypt_and_verify(docfile.data_file, docfile.tag)
 
 
-# MODE DECRYPT MESSAGE
-def decrypt(doc_id):
-  # 🚚 LAZY IMPORTS: Tucked cleanly inside the extraction layer environment
-  from Crypto.PublicKey import RSA 
-  from Crypto.Cipher import AES, PKCS1_OAEP 
+def prepare_legacy_migration(owner_name, vault_key):
+  """Re-encrypt legacy rows in memory for one atomic database migration."""
+  migrated = []
+  for row in retrieveFiles(owner_name):
+    wrapped_key = row[5]
+    if isinstance(wrapped_key, bytes) and wrapped_key.startswith(KEY_FORMAT):
+      continue
 
-  msg = ''
-  if len(doc_id.get()) > 1:
-    docfile = retrieveSingleFile(doc_id.get().encode('utf-8'))
+    doc = type("LegacyDocument", (), {
+      "data_file": row[2],
+      "cipher_aes": row[3],
+      "tag": row[4],
+      "session_key": wrapped_key,
+    })()
+    plaintext = _decrypt_payload(doc, vault_key, allow_legacy=True)
+    ciphertext, nonce, tag, new_wrapped_key = _encrypt_payload(plaintext, vault_key)
+    migrated.append({
+      "file_id": row[0],
+      "data_file": ciphertext,
+      "cipher_aes": nonce,
+      "tag": tag,
+      "session_key": new_wrapped_key,
+      "last_updated": datetime.now().isoformat(),
+    })
+  return migrated
 
-    if docfile != None:
-      bytes_k = check_key('private_key'.encode("utf-8"))
-      private_key = RSA.import_key(bytes_k[1])
 
-      # Decrypt Session Key
-      cipher_rsa = PKCS1_OAEP.new(private_key)
-      session_key = cipher_rsa.decrypt(bytes_k[2])
+def lock_file(
+  session_cookie,
+  upd_id,
+  text_message,
+  mode,
+  file_title="Untitled",
+  file_for="General",
+  vault_key=None,
+):
+  if len(text_message) <= 5:
+    return (
+      "The text editor is blank or the characters are less than the required "
+      "minimum number. Type something first to continue."
+    )
 
-      # Decrypt the data with the AES session key
-      cipher_aes = AES.new(session_key, AES.MODE_EAX, docfile[3])
-      msg = cipher_aes.decrypt_and_verify(docfile[2], docfile[4])
+  ciphertext, nonce, tag, wrapped_key = _encrypt_payload(
+    text_message.encode("utf-8"),
+    vault_key,
+  )
+  owner_name = _owner_name(session_cookie)
 
-    else:
-      msg = "No content was found."
-  else:
-    showerror("Can't perform search.")
+  if mode == "create":
+    return insertFile(
+      file_id=generate_secrets.hashed_id(secrets.token_bytes(24)),
+      owner_name=owner_name,
+      data_file=ciphertext,
+      cipher_aes=nonce,
+      tag=tag,
+      session_key=wrapped_key,
+      ts=datetime.now(),
+      file_title=file_title,
+      file_for=file_for,
+    )
 
-  return msg
+  if mode == "update":
+    if upd_id is None or not upd_id.get():
+      return "not_found"
+    return updateFile(
+      file_id=upd_id.get().encode("utf-8"),
+      owner_name=owner_name,
+      data_file=ciphertext,
+      tag=tag,
+      cipher_aes=nonce,
+      session_key=wrapped_key,
+      last_updated=datetime.now(),
+      file_title=file_title,
+      file_for=file_for,
+    )
+
+  return f"Unsupported file operation: {mode}"
+
+
+def decrypt(doc_id, session_cookie, vault_key):
+  if len(doc_id.get()) <= 1:
+    raise ValueError("Select a document before attempting decryption")
+
+  docfile = retrieveSingleFile(
+    doc_id.get().encode("utf-8"),
+    _owner_name(session_cookie),
+  )
+  if docfile is None:
+    return "No content was found."
+
+  plaintext = _decrypt_payload(docfile, vault_key)
+  return plaintext.decode("utf-8")

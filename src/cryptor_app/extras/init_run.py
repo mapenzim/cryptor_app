@@ -11,7 +11,8 @@ def run_connection():
   # 🛡️ If the directory doesn't exist, create it cleanly!
   if not os.path.exists(db_dir):
     print(f"Directory '{db_dir}' missing. Creating directory...")
-    os.makedirs(db_dir, exist_ok=True) 
+    os.makedirs(db_dir, mode=0o700, exist_ok=True)
+  os.chmod(db_dir, 0o700)
   
   # Initialize the SQLite connection with standard declaration type parsers
   init_connection = sqlite3.connect(
@@ -27,10 +28,10 @@ def run_connection():
     CREATE TABLE IF NOT EXISTS lockedfiles(
       file_id TEXT PRIMARY KEY UNIQUE,
       owner_name TEXT,
-      data_file TEXT,
-      cipher_aes TEXT,
-      tag TEXT,
-      session_key TEXT,
+      data_file BLOB,
+      cipher_aes BLOB,
+      tag BLOB,
+      session_key BLOB,
       ts TIMESTAMP,
       last_updated TIMESTAMP,
       file_title TEXT,
@@ -56,8 +57,8 @@ def run_connection():
     );
     CREATE TABLE IF NOT EXISTS keys(
       key_id TEXT PRIMARY KEY UNIQUE,
-      key_data TEXT,
-      session_key TEXT
+      key_data BLOB,
+      session_key BLOB
     );
     COMMIT;
   ''')
@@ -77,4 +78,5 @@ def run_connection():
 
   init_connection.commit()
   init_connection.close() 
+  os.chmod(db_path, 0o600)
   print("Database connection established, migrations verified, and schemas updated successfully.")

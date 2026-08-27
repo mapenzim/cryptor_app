@@ -69,10 +69,10 @@ class Progress_Frame(Frame):
     self.YesBtn = Button(self.buttons, text="Download Modules", command=self.check_and_start)
     self.YesBtn.pack(side='left', expand=True, fill=tk.X, padx=(0, 5))
 
-    self.SkipBtn = Button(self.buttons, text='Skip', command=self.skip_dwn)
+    self.SkipBtn = Button(self.buttons, text='Cancel', command=self.cancel)
     self.SkipBtn.pack(side='right', expand=True, fill=tk.X, padx=(5, 0))
     
-    self.required_modules = {'pycryptodome'} 
+    self.required_modules = {'pycryptodome', 'ollama'}
     self.installed_modules = {dist.metadata['Name'].lower() for dist in distributions()}
     self.missing_modules = [pkg for pkg in self.required_modules if pkg not in self.installed_modules]
 
@@ -82,10 +82,10 @@ class Progress_Frame(Frame):
       self.p_result.set(True)
       self.status_label.config(text="All modules verified! Launching...")
       self.YesBtn['state'] = "disabled"
-      self.master.after(500, self.skip_dwn)
+      self.master.after(500, self.close_after_success)
 
-  def skip_dwn(self):
-    self.p_result.set(True)
+  def cancel(self):
+    self.p_result.set(False)
     self.master.destroy()
 
   def check_and_start(self):

@@ -3,14 +3,15 @@ from tkinter.ttk import *
 from datetime import datetime, timedelta
 
 class cookie_monitor(Frame):
-  def __init__(self, master=None):
+  def __init__(self, master=None, session_cookie=None, switch_session=None):
     super().__init__(master)
     self.pack()
 
-    from cryptor_app.extras.models import verifyCookie
-
     self.root_window = master 
-    self.session_cookie = verifyCookie()
+    self.session_cookie = session_cookie
+    self.switch_session = switch_session
+    if self.session_cookie is None:
+      raise ValueError("An authenticated session is required")
 
     self.cookie_box = tk.Toplevel(master, relief='flat', bg="#1e1e1e")
     self.cookie_box.geometry("400x160")
@@ -95,7 +96,7 @@ class cookie_monitor(Frame):
       cursor='hand2', 
       text="Log Out Now", 
       style='Delete.TButton', 
-      command=self.dismiss_warning
+      command=self.logout_now
     )
     self.del_btn.grid(row=0, column=1, sticky=tk.E, padx=(6, 0))
 
@@ -103,24 +104,34 @@ class cookie_monitor(Frame):
     self.cookie_box.focus()
 
   def re_cookie(self):
-    from extras.models import renew_cookie
-    
-    if hasattr(self.root_window, "check_run_id") and self.root_window.check_run_id is not None:
-      self.root_window.after_cancel(self.root_window.check_run_id)
-      self.root_window.check_run_id = None
+    from cryptor_app.extras.models import renew_cookie
 
     new_expiration = datetime.now() + timedelta(minutes=45)
-    renew_cookie(cookie_id=self.cookie_id, cookie_expire_time=new_expiration.isoformat())
+    renewed = renew_cookie(
+      cookie_id=self.cookie_id,
+      cookie_expire_time=new_expiration.isoformat(),
+    )
+    if not renewed:
+      self.logout_now()
+      return
     
     self.root_window.monitor_active = False
     self.root_window.active_cookie_popup = None
+    self.root_window.session_expire_time = new_expiration
 
     self.cookie_box.destroy()
-    self.root_window.destroy()
-    
-    # 🚀 FIX: Import directly from the absolute package module path
-    from cryptor_app.main import create_main_app
-    create_main_app()
+
+  def logout_now(self):
+    from cryptor_app.extras.models import logout_func
+
+    if hasattr(self.root_window, "check_run_id") and self.root_window.check_run_id is not None:
+      self.root_window.after_cancel(self.root_window.check_run_id)
+      self.root_window.check_run_id = None
+    logout_func(self.cookie_id)
+    self.root_window.active_cookie_popup = None
+    self.cookie_box.destroy()
+    if self.switch_session is not None:
+      self.switch_session(None)
   
   def dismiss_warning(self):
     """
@@ -132,4 +143,3 @@ class cookie_monitor(Frame):
     
     # Safely close the top-level Tkinter modal frame window
     self.cookie_box.destroy()
-

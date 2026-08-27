@@ -1,13 +1,17 @@
 import sys
-from cryptor_app.main import create_main_app
+
+
+def _load_application():
+  from cryptor_app.main import run_application
+  return run_application
 
 def main():
   print("Initializing secure Cryptor Workspace canvas environment...")
   try:
-    create_main_app()
+    return _load_application()()
   except Exception as e:
-    # 🚀 FIX: Print 'e' as a direct object string instead of subscripting with [0]
     print(f"CRITICAL: System initialization loop aborted.\nDetails: {e}", file=sys.stderr)
+    return 1
 
 if __name__ == "__main__":
-  main()
+  raise SystemExit(main())

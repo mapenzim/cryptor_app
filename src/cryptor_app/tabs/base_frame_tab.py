@@ -19,27 +19,30 @@ from cryptor_app.config_files.custom_modals import CustomModals
 # __________________*____________________*___________________
 # Opening Frame
 # -----------------------------------------------------------
-def base_frame_tab(root, session_cookie, create_main_app):
-  # ------------------------------------------------------
-  # 🖥️ TASKBAR-AWARE FIXED MAXIMIZATION (LINUX / WINDOWS)
-  # ----------------*---------------------*-----------------
+def base_frame_tab(root, session_cookie, vault_key, switch_session):
+
+  # ----------------------------------------------------
+  # 🖥️ TASKBAR/DOCK-AWARE FIXED MAXIMIZATION (CROSS-PLATFORM)
+  # ----------------------------------------------------
   root.update_idletasks()
   root.state('normal')
   
-  # Default fallback sizes
-  custom_width = root.winfo_screenwidth()
-  custom_height = root.winfo_screenheight() - 75
-  start_x = 0
-  start_y = 0
+  import platform
 
-  # 🐧 Native Linux Check: Query the X11 usable workarea geometry bounds
-  if os.name != 'nt':
+  # 🍏 Native macOS Check
+  if platform.system() == 'Darwin':
+    # wm_maxsize returns the maximum usable width/height minus the Dock and Menu Bar
+    custom_width, custom_height = root.wm_maxsize()
+    start_x = 0
+    # Add a slight offset to prevent the title bar from slipping under the top menu bar
+    start_y = 22
+    custom_height -= 22
+
+  # 🐧 Native Linux Check
+  elif os.name != 'nt':
     try:
-      # Query the structural root window property manager for net workarea dimensions
       import subprocess
       output = subprocess.check_output("xprop -root _NET_WORKAREA", shell=True).decode()
-      
-      # xprop returns format: _NET_WORKAREA(CARDINAL) = x, y, width, height, ...
       if "=" in output:
         workarea_data = output.split("=")[1].strip().split(",")
         start_x = int(workarea_data[0].strip())
@@ -47,12 +50,19 @@ def base_frame_tab(root, session_cookie, create_main_app):
         custom_width = int(workarea_data[2].strip())
         custom_height = int(workarea_data[3].strip())
     except Exception:
-      # Fallback to standard offset math if xprop isn't present on the system
-      start_x = 72 # Average width of the default Ubuntu Docker panel
+      start_x = 72
       custom_width = root.winfo_screenwidth() - start_x
       custom_height = root.winfo_screenheight() - 75
+      start_y = 0
 
-  # 🚀 Apply the calculated offsets perfectly clearing the left docker edge
+  # 🪟 Windows Fallback
+  else:
+    custom_width = root.winfo_screenwidth()
+    custom_height = root.winfo_screenheight() - 75
+    start_x = 0
+    start_y = 0
+
+  # 🚀 Apply the calculated offsets cleanly clearing all platform docks
   root.geometry(f"{custom_width}x{custom_height}+{start_x}+{start_y}")
   root.update_idletasks()
   root.resizable(0, 0)
@@ -143,8 +153,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
       root.after_cancel(root.check_run_id)
       root.check_run_id = None
     logout_func(cookie)
-    root.destroy()
-    create_main_app()
+    switch_session(None)
 
   logout_btn = Button(header_banner, text="Logout", style="Lougout.TButton", command=lambda: logout(session_cookie[0]), cursor="hand2")
   logout_btn.pack(side='right', anchor='e', padx=(15, 0))
@@ -161,7 +170,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
 
   file_list_container = Frame(left_sidebar, relief='flat')
   file_list_container.pack(side='top', fill='both', expand=True, padx=5, pady=5)
-  sidebar_explorer = file_list(file_list_container)
+  sidebar_explorer = file_list(file_list_container, session_cookie)
 
   action_panel.pack(side='bottom', fill='x', padx=5, pady=5)
   editor_container.pack(side='right', fill='both', expand=True, padx=(5, 10), pady=10)
@@ -188,7 +197,7 @@ def base_frame_tab(root, session_cookie, create_main_app):
       for_var.set(tree_vals[1])
 
     try:
-      message = decrypt(upd_id)
+      message = decrypt(upd_id, session_cookie, vault_key)
       text_scroll.delete(1.0, 'end')
       text_scroll.insert(1.0, message)
       lock_btn['state'] = 'disabled'
@@ -217,7 +226,13 @@ def base_frame_tab(root, session_cookie, create_main_app):
     )
     if my_del:
       from cryptor_app.extras.models import deleteFile
-      deleteFile(current_selection.encode('utf-8'))
+      delete_result = deleteFile(
+        current_selection.encode('utf-8'),
+        session_cookie.cookie_owner_username,
+      )
+      if delete_result != 'okay':
+        CustomModals.show_error(root, "Delete Failed", str(delete_result))
+        return
       if upd_id.get() == current_selection: new_doc()
       else: sidebar_explorer.doc_id.set('')
       sidebar_explorer.refresh_list()
@@ -230,7 +245,15 @@ def base_frame_tab(root, session_cookie, create_main_app):
       CustomModals.show_error(root, 'Input Missing', 'Please provide both a Document Title and a Purpose before locking.')
       return
     content = text_scroll.get(1.0, 'end-1c')
-    lockm = lock_file(session_cookie, upd_id=None, text_message=content, mode='create', file_title=t_str, file_for=f_str)
+    lockm = lock_file(
+      session_cookie,
+      upd_id=None,
+      text_message=content,
+      mode='create',
+      file_title=t_str,
+      file_for=f_str,
+      vault_key=vault_key,
+    )
     if lockm != 'okay': 
       CustomModals.show_error(root, 'Error', str(lockm))
       text_scroll.focus()
@@ -246,7 +269,15 @@ def base_frame_tab(root, session_cookie, create_main_app):
       CustomModals.show_error(root, 'Input Missing', 'Document Title and Purpose headers cannot be empty.')
       return
     content = text_scroll.get(1.0, 'end-1c')
-    lockm = lock_file(session_cookie, upd_id, text_message=content, mode='update', file_title=t_str, file_for=f_str)
+    lockm = lock_file(
+      session_cookie,
+      upd_id,
+      text_message=content,
+      mode='update',
+      file_title=t_str,
+      file_for=f_str,
+      vault_key=vault_key,
+    )
     if lockm != 'okay': 
       CustomModals.show_error(root, 'Error', str(lockm))
       text_scroll.focus()

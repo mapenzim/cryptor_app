@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-def Run_Cookie(root, cookie, create_main_app):
+def Run_Cookie(root, cookie, switch_session):
   # Lazy imports to keep startup snappy
   from cryptor_app.extras.models import logout_func
   from cryptor_app.config_files.monitor_cookie import cookie_monitor
@@ -12,7 +12,11 @@ def Run_Cookie(root, cookie, create_main_app):
   if not hasattr(root, "monitor_active"):
     root.monitor_active = False
 
-  expire_time = datetime.fromisoformat(cookie.cookie_expire_time)
+  expire_time = getattr(
+    root,
+    "session_expire_time",
+    datetime.fromisoformat(cookie.cookie_expire_time),
+  )
   time_remaining = expire_time - datetime.now()
 
   # --- SCENARIO 1: Cookie has completely expired at 0 seconds ---
@@ -32,8 +36,7 @@ def Run_Cookie(root, cookie, create_main_app):
       root.check_run_id = None
             
     logout_func(cookie[0])
-    root.destroy()
-    create_main_app()
+    switch_session(None)
     return
 
   # --- SCENARIO 2: Cookie expires soon (<= 3 minutes remaining) ---
@@ -44,7 +47,7 @@ def Run_Cookie(root, cookie, create_main_app):
       print(f"Session expiring soon! {time_remaining.total_seconds():.0f}s left.")
       
       # Instantiate the window panel
-      cookie_window = cookie_monitor(root)
+      cookie_window = cookie_monitor(root, cookie, switch_session)
       
       # 🛡️ Keep a reference on root so our 1-second checker can access and destroy it at 0s
       root.active_cookie_popup = cookie_window.cookie_box

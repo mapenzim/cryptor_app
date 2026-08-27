@@ -72,6 +72,10 @@ To keep the desktop UI running smoothly at 60 FPS while querying a local LLM, th
 
 Ensure you have the Ollama background engine up and running offline on your local machine configuration:
 
+The Python installation must also include Tkinter. Some package-manager Python
+builds ship it separately; install the matching Tk package for your Python
+version before launching the application.
+
 ```bash
 # Verify ollama execution and pull down your target model weight
 ollama run llama3:8b
@@ -104,4 +108,3 @@ cryptor-app
 
 * **True Zero-Knowledge Execution:** All operations, encryption cycles, and text generation queries run completely localized on your client hardware machine. No internet sockets are ever opened to third-party APIs.
 * **Zero Residual Cryptographic Traces:** Background timers clear out background threading loop processes completely upon safe exit routes to guarantee zero memory address leaks or orphaned data handles remain accessible to the host OS runtime space.
-

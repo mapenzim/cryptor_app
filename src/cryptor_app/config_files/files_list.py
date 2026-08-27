@@ -1,16 +1,18 @@
 import tkinter as tk
 from tkinter.ttk import *
-from cryptor_app.extras.models import retrieveFiles, verifyCookie
+from cryptor_app.extras.models import retrieveFiles
 from datetime import datetime
 
 lifont = ('Times', 12, 'italic')
 
 class file_list(Frame):
-  def __init__(self, master=None):
+  def __init__(self, master=None, session_cookie=None):
     super().__init__(master)
     self.pack(fill='both', expand=True)
 
-    session_cookie = verifyCookie()
+    if session_cookie is None:
+      raise ValueError("An authenticated session is required")
+    self.session_cookie = session_cookie
     self.all_files = retrieveFiles(session_cookie[2])
     
     self.doc_id = tk.StringVar()
@@ -88,8 +90,7 @@ class file_list(Frame):
       count += 1
 
   def refresh_list(self):
-    session_cookie = verifyCookie()
-    self.all_files = retrieveFiles(session_cookie[2])
+    self.all_files = retrieveFiles(self.session_cookie[2])
     for item in self.lst_files.get_children():
       self.lst_files.delete(item)
     self.populate_tree()

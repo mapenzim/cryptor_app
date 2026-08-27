@@ -23,15 +23,15 @@ def sign_up_tab(notebook, root):
   def validate(*args):
     password = pwd_label.get()
     confirm_password = confirm_pwd_label.get()
-    if confirm_password == password:
+    if password and confirm_password == password:
       set_message('Match!', SUCCESS)
       signup_btn['state'] = 'normal'
       signup_btn['cursor'] = 'hand2'
       return
     if password.startswith(confirm_password):
       set_message('Incomplete!', WARNING)
-      return
-    set_message("Passwords \nno match!", ERROR)
+    else:
+      set_message("Passwords \nno match!", ERROR)
     signup_btn['state'] = 'disabled'
     signup_btn['cursor'] = 'circle'
 
@@ -42,12 +42,27 @@ def sign_up_tab(notebook, root):
     from cryptor_app.extras.models import insertUser
     from cryptor_app.config_files.custom_modals import CustomModals
 
-    uname = email_tf.get().encode('utf-8')
-    secret = pwd_tf.get().encode('utf-8')
-    upwd = hash_sign(cookie=uname, secret=secret)
+    uname = email_tf.get().strip().encode('utf-8')
+    secret_text = pwd_tf.get()
+    secret = secret_text.encode('utf-8')
 
     if uname != ''.encode('utf-8') and secret != ''.encode('utf-8'):
+      if secret_text != cpwd_tf.get():
+        CustomModals.show_error(
+          parent=root,
+          title="Password Mismatch",
+          message="The password and confirmation fields must match."
+        )
+        return
+      if len(secret_text) < 12:
+        CustomModals.show_error(
+          parent=root,
+          title="Password Too Short",
+          message="Use at least 12 characters for the master password."
+        )
+        return
       if terms_var.get() != False:
+        upwd = hash_sign(cookie=uname, secret=secret)
         mode = insertUser(user_id=hashed_id(secrets.token_bytes(24)), username=uname, password=upwd, timestamp=datetime.now())
         if mode == 'success':
           email_tf.delete(0, 'end')
@@ -86,6 +101,7 @@ def sign_up_tab(notebook, root):
       )
 
   confirm_pwd_label.trace_add('write', validate)
+  pwd_label.trace_add('write', validate)
 
   signup_frame = Frame(notebook, style="Notebook.TFrame", padding=16)
 
