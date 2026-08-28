@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cryptor-app"
-version = "0.1.003"
+version = "0.1.4"
 authors = [
   { name="Mapenzi Mudimba", email="mudimbam@outlook.com" }
 ]
@@ -14,6 +14,7 @@ requires-python = ">=3.11"# 🆕 Add the formal SPDX License Expression here:
 license = "GPL-3.0-or-later"
 classifiers = [
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.14",
   "Operating System :: OS Independent",
 ]
 dependencies = [
