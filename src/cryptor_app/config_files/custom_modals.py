@@ -76,8 +76,16 @@ class CustomModals:
     return result["value"]
 
   @classmethod
-  def show_error(cls, parent, title, message):
-    """Custom replacement for showerror dialog box."""
+  def _show_message(
+    cls,
+    parent,
+    title,
+    message,
+    header,
+    header_foreground,
+    message_foreground,
+  ):
+    """Display a blocking status dialog with the requested visual tone."""
     modal = tk.Toplevel(parent)
     modal.title(title)
     modal.configure(bg="#1e1e1e")
@@ -94,15 +102,14 @@ class CustomModals:
     content_frame = ttk.Frame(modal, style="TFrame")
     content_frame.pack(fill="both", expand=True, padx=20, pady=20)
     
-    # Error Context Title Header Indicator
-    error_header = ttk.Label(
+    status_header = ttk.Label(
       content_frame,
-      text="⚠️ CRITICAL ERROR",
+      text=header,
       font=("Helvetica", 11, "bold"),
-      foreground="#ff5555", # Destructive Crimson red warning text mapping
+      foreground=header_foreground,
       background="#1e1e1e"
     )
-    error_header.pack(anchor="w", pady=(0, 5))
+    status_header.pack(anchor="w", pady=(0, 5))
     
     msg_label = ttk.Label(
       content_frame, 
@@ -111,7 +118,7 @@ class CustomModals:
       justify="left",
       font=("Helvetica", 10),
       background="#1e1e1e",
-      foreground="#E74747"
+      foreground=message_foreground
     )
     msg_label.pack(fill="both", expand=True, pady=(0, 15))
     
@@ -122,3 +129,27 @@ class CustomModals:
     close_btn.pack(side="right")
     
     parent.wait_window(modal)
+
+  @classmethod
+  def show_error(cls, parent, title, message):
+    """Custom replacement for showerror dialog box."""
+    return cls._show_message(
+      parent=parent,
+      title=title,
+      message=message,
+      header="⚠️ CRITICAL ERROR",
+      header_foreground="#ff5555",
+      message_foreground="#E74747",
+    )
+
+  @classmethod
+  def show_success(cls, parent, title, message):
+    """Display a positive completion dialog without error messaging."""
+    return cls._show_message(
+      parent=parent,
+      title=title,
+      message=message,
+      header="✅ SUCCESS",
+      header_foreground="#7ddc83",
+      message_foreground="#ffffff",
+    )

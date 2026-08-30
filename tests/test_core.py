@@ -208,6 +208,118 @@ class CoreTests(unittest.TestCase):
     self.assertIn("boom", stderr.getvalue())
 
   @unittest.skipUnless(TKINTER_AVAILABLE, "Tkinter is not installed")
+  def test_shutdown_cancels_all_pending_tk_callbacks(self):
+    from cryptor_app.main import cancel_pending_tk_callbacks
+
+    root = Mock()
+    root.tk.call.return_value = ("after#1", "after#2")
+    root.tk.splitlist.return_value = ("after#1", "after#2")
+
+    cancel_pending_tk_callbacks(root)
+
+    root.tk.call.assert_any_call("after", "cancel", "after#1")
+    root.tk.call.assert_any_call("after", "cancel", "after#2")
+    root.after_cancel.assert_not_called()
+
+  @unittest.skipUnless(TKINTER_AVAILABLE, "Tkinter is not installed")
+  def test_line_number_redraw_keeps_only_one_timer(self):
+    from cryptor_app.config_files.line_numbers import TextLineNumbers
+
+    canvas = object.__new__(TextLineNumbers)
+    canvas.textwidget = Mock()
+    canvas.textwidget.winfo_exists.return_value = True
+    canvas.textwidget.index.side_effect = ["1.0", "2.0", "1.0", "2.0"]
+    canvas.textwidget.dlineinfo.side_effect = [(0, 0), None, (0, 0), None]
+    canvas._redraw_after_id = None
+
+    with (
+      patch.object(TextLineNumbers, "winfo_exists", return_value=True),
+      patch.object(TextLineNumbers, "delete"),
+      patch.object(TextLineNumbers, "create_text"),
+      patch.object(TextLineNumbers, "after", return_value="after#1") as after,
+    ):
+      canvas.redraw()
+      canvas.redraw()
+
+    after.assert_called_once_with(30, canvas._scheduled_redraw)
+
+  @unittest.skipUnless(TKINTER_AVAILABLE, "Tkinter is not installed")
+  def test_entry_style_uses_contrasting_field_and_text_colors(self):
+    from cryptor_app.config_files import styles
+
+    root = Mock()
+    style = Mock()
+    with (
+      patch.object(styles, "Style", return_value=style),
+      patch.object(styles.platform, "system", return_value="Darwin"),
+    ):
+      styles.Stylings(root)
+
+    entry_config = next(
+      call.kwargs
+      for call in style.configure.call_args_list
+      if call.args == ("TEntry",)
+    )
+    self.assertNotEqual(
+      entry_config["fieldbackground"],
+      entry_config["foreground"],
+    )
+    self.assertEqual(entry_config["insertcolor"], entry_config["foreground"])
+    style.map.assert_any_call(
+      "TEntry",
+      fieldbackground=[
+        ('disabled', '#252526'),
+        ('readonly', '#252526'),
+        ('focus', '#2e2e2e'),
+      ],
+      foreground=[
+        ('disabled', '#9a9a9a'),
+        ('readonly', '#ffffff'),
+      ],
+      bordercolor=[('focus', '#3fa8a5')],
+    )
+
+  @unittest.skipUnless(TKINTER_AVAILABLE, "Tkinter is not installed")
+  def test_success_modal_uses_success_status_instead_of_critical_error(self):
+    from cryptor_app.config_files.custom_modals import CustomModals
+
+    parent = Mock()
+    with patch.object(CustomModals, "_show_message") as show_message:
+      CustomModals.show_success(
+        parent=parent,
+        title="Success",
+        message="Saved.",
+      )
+
+    show_message.assert_called_once_with(
+      parent=parent,
+      title="Success",
+      message="Saved.",
+      header="✅ SUCCESS",
+      header_foreground="#7ddc83",
+      message_foreground="#ffffff",
+    )
+
+  @unittest.skipUnless(TKINTER_AVAILABLE, "Tkinter is not installed")
+  def test_missing_ollama_model_error_has_install_instructions(self):
+    from cryptor_app.config_files.ai_texter import AITexterPanel
+
+    message = AITexterPanel._friendly_worker_error(
+      "Ollama API error 404: model 'llama3:8b' not found",
+    )
+    self.assertIn("ollama pull llama3:8b", message)
+    self.assertIn("not installed", message)
+
+  @unittest.skipUnless(TKINTER_AVAILABLE, "Tkinter is not installed")
+  def test_ollama_timeout_error_is_actionable(self):
+    from httpx import ReadTimeout
+    from cryptor_app.config_files.ai_texter import AITexterPanel
+
+    message = AITexterPanel._friendly_worker_error(ReadTimeout(""))
+    self.assertIn("exceeded 300 seconds", message)
+    self.assertIn("CRYPTOR_OLLAMA_TIMEOUT", message)
+
+  @unittest.skipUnless(TKINTER_AVAILABLE, "Tkinter is not installed")
   def test_session_renewal_uses_absolute_import_and_updates_runtime(self):
     from cryptor_app.config_files.monitor_cookie import cookie_monitor
 

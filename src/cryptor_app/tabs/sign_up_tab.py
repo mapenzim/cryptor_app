@@ -70,7 +70,7 @@ def sign_up_tab(notebook, root):
           cpwd_tf.delete(0, 'end')
           
           # 🚀 Custom alert window replacing native showinfo
-          CustomModals.show_error(
+          CustomModals.show_success(
             parent=root,
             title="Success",
             message="Successfully registered secure workspace account profile."

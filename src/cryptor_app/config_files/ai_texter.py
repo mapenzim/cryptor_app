@@ -5,8 +5,21 @@ from datetime import datetime
 import threading
 import asyncio
 import queue
+import os
 
 from cryptor_app.config_files.custom_modals import CustomModals
+
+DEFAULT_OLLAMA_MODEL = (
+  os.environ.get("CRYPTOR_OLLAMA_MODEL", "llama3:8b").strip()
+  or "llama3:8b"
+)
+try:
+  OLLAMA_TIMEOUT_SECONDS = max(
+    30.0,
+    float(os.environ.get("CRYPTOR_OLLAMA_TIMEOUT", "300")),
+  )
+except ValueError:
+  OLLAMA_TIMEOUT_SECONDS = 300.0
  
 class AITexterPanel(Frame):
   def __init__(self, master, text_scroll, title_entry, for_var, editor_container):
@@ -95,6 +108,31 @@ class AITexterPanel(Frame):
     """ Secondary isolation bridge that safely initializes a fresh async loop inside the thread """
     asyncio.run(self.async_ai_worker(prompt_text))
 
+  @staticmethod
+  def _friendly_worker_error(error):
+    """Translate common Ollama failures into actionable setup instructions."""
+    message = str(error)
+    normalized = message.lower()
+    error_name = type(error).__name__.lower()
+    if "timeout" in error_name or "timed out" in normalized:
+      return (
+        f"The local Ollama request exceeded {OLLAMA_TIMEOUT_SECONDS:g} seconds. "
+        "The model may still be loading or the prompt may be generating a long "
+        "response. Try again, or increase CRYPTOR_OLLAMA_TIMEOUT."
+      )
+    if "404" in normalized and "not found" in normalized:
+      return (
+        f"The Ollama model '{DEFAULT_OLLAMA_MODEL}' is not installed.\n\n"
+        f"Install it with:\nollama pull {DEFAULT_OLLAMA_MODEL}\n\n"
+        "Then try the custom prompt again."
+      )
+    if "connection refused" in normalized or "failed to connect" in normalized:
+      return (
+        "Cryptor App could not connect to Ollama. Start the local Ollama "
+        "service, then try again."
+      )
+    return message
+
   def _poll_worker_result(self):
     if not self.winfo_exists():
       return
@@ -138,9 +176,11 @@ class AITexterPanel(Frame):
       else:
         from ollama import AsyncClient
 
-        client = AsyncClient(timeout=60.0)
+        client = AsyncClient(timeout=OLLAMA_TIMEOUT_SECONDS)
         response = await client.chat(
-          model='llama3:8b',
+          model=DEFAULT_OLLAMA_MODEL,
+          keep_alive="10m",
+          options={"num_predict": 256},
           messages=[
             {
               'role': 'system',
@@ -157,7 +197,7 @@ class AITexterPanel(Frame):
       self.worker_results.put(("ok", generated_result))
 
     except Exception as e:
-      self.worker_results.put(("error", str(e)))
+      self.worker_results.put(("error", self._friendly_worker_error(e)))
 
   def direct_ai_output_to_editor(self, result_text):
     self.is_generating = False

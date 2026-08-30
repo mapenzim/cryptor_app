@@ -12,12 +12,30 @@ from cryptor_app.config_files.styles import Stylings
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 EXIT_APPLICATION = object()
 
+def cancel_pending_tk_callbacks(widget):
+  """Stop Tcl timers while leaving command cleanup to widget destruction."""
+  try:
+    pending = widget.tk.splitlist(widget.tk.call("after", "info"))
+  except (AttributeError, tk.TclError):
+    return
+
+  for after_id in pending:
+    try:
+      # Do not call widget.after_cancel here. The timer may belong to a child
+      # widget, and that wrapper also deletes the child's Tcl command without
+      # removing it from the child's cleanup list. Raw Tcl cancellation stops
+      # execution while normal widget destruction deletes the command once.
+      widget.tk.call("after", "cancel", after_id)
+    except (AttributeError, tk.TclError):
+      pass
+
 def run_dependency_check():
   """ Launches standalone visual check step frames. Returns true on confirmation """
   installer_root = tk.Tk()
   app = Progress_Frame(installer_root)
   
   if not app.missing_modules:
+    cancel_pending_tk_callbacks(installer_root)
     installer_root.destroy()
     return True
 
@@ -68,6 +86,7 @@ def create_main_app(session_context=None):
         pass
       root.check_run_id = None
     root.next_session = next_session
+    cancel_pending_tk_callbacks(root)
     root.destroy()
 
   def logout_transaction():

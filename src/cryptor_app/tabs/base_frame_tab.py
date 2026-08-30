@@ -236,7 +236,7 @@ def base_frame_tab(root, session_cookie, vault_key, switch_session):
       if upd_id.get() == current_selection: new_doc()
       else: sidebar_explorer.doc_id.set('')
       sidebar_explorer.refresh_list()
-      CustomModals.show_error(root, "Success", "File record permanently wiped from storage nodes.")
+      CustomModals.show_success(root, "Success", "File record permanently wiped from storage nodes.")
 
   def file_locker():
     from cryptor_app.extras.encryt import lock_file
@@ -260,7 +260,7 @@ def base_frame_tab(root, session_cookie, vault_key, switch_session):
     else: 
       sidebar_explorer.refresh_list()
       new_doc()
-      CustomModals.show_error(root, 'Success', 'New document safely encrypted and stored under list parameters.')
+      CustomModals.show_success(root, 'Success', 'New document safely encrypted and stored under list parameters.')
 
   def file_update():
     from cryptor_app.extras.encryt import lock_file
@@ -283,7 +283,7 @@ def base_frame_tab(root, session_cookie, vault_key, switch_session):
       text_scroll.focus()
     else: 
       sidebar_explorer.refresh_list()
-      CustomModals.show_error(root, 'Success', 'Document transaction payload cipher addresses updated successfully!')
+      CustomModals.show_success(root, 'Success', 'Document transaction payload cipher addresses updated successfully!')
 
   def new_doc():
     upd_id.set('')

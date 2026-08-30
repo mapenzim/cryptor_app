@@ -46,6 +46,31 @@ def Stylings(root):
     foreground=[("pressed", "blue"), ("active", "green")],
     background=[("pressed", "white"), ("active", "blue")]
   )
+
+  # Keep form text legible on every ttk theme. Without an explicit
+  # fieldbackground, some platforms combine the global white foreground with
+  # the theme's default white Entry background.
+  style.configure("TEntry",
+    fieldbackground="#2e2e2e",
+    foreground="#ffffff",
+    insertcolor="#ffffff",
+    selectbackground="#3fa8a5",
+    selectforeground="#ffffff",
+    bordercolor="#5e5e5e",
+    padding=(6, 5)
+  )
+  style.map("TEntry",
+    fieldbackground=[
+      ('disabled', '#252526'),
+      ('readonly', '#252526'),
+      ('focus', '#2e2e2e')
+    ],
+    foreground=[
+      ('disabled', '#9a9a9a'),
+      ('readonly', '#ffffff')
+    ],
+    bordercolor=[('focus', '#3fa8a5')]
+  )
   
   # 🔴 Smooth Treeview Styling for the File List
   style.configure("Treeview",
