@@ -151,6 +151,9 @@ db/
 *.key
 *.secret
 
+# Separate Django repository (managed and published independently)
+/cryptor_django/
+
 # --- Env Files and Folders ---#
 bin
 lib

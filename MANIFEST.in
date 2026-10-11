@@ -1,0 +1,2 @@
+# The Django web application is a separate project and repository.
+prune cryptor_django
